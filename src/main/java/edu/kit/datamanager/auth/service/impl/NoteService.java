@@ -15,15 +15,19 @@
  */
 package edu.kit.datamanager.auth.service.impl;
 
-import com.google.common.collect.Lists;
+import edu.kit.datamanager.auth.dao.ByExampleSpecification;
 import edu.kit.datamanager.auth.dao.INoteDao;
+import edu.kit.datamanager.auth.dao.PermissionSpecification;
+import edu.kit.datamanager.auth.domain.AclEntry;
 import edu.kit.datamanager.auth.domain.Note;
 import edu.kit.datamanager.auth.service.INoteService;
 import java.util.List;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specifications;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,34 +42,62 @@ public class NoteService implements INoteService<Note>{
 
   @Autowired
   private INoteDao dao;
+  @PersistenceContext
+  private EntityManager em;
 
   public NoteService(){
     super();
+
   }
 
-  // read - one
+  @Override
   @Transactional(readOnly = true)
-  @Override
-  public Note findOne(final long id){
-    return getDao().findOne(id);
+  public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission){
+    return ((INoteDao) getDao()).findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, permission);
   }
 
-  // read - all
-  /**
-   *
-   * @return
-   */
+  @Override
   @Transactional(readOnly = true)
-  @Override
-  public List<Note> findAll(){
-    return Lists.newArrayList(getDao().findAll());
+  public Page<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl){
+    return ((INoteDao) getDao()).findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, permission, pgbl);
   }
 
   @Override
-  public Page<Note> findPaginated(final int page, final int size){
-    return getDao().findAll(new PageRequest(page, size));
+  @Transactional(readOnly = true)
+  public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission){
+    return ((INoteDao) getDao()).findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(noteId, sids, permission);
   }
 
+  @Override
+  @Transactional(readOnly = true)
+  public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl){
+    Specifications<Note> spec = Specifications.where(PermissionSpecification.toSpecification(sids, permission)).and(new ByExampleSpecification(em).byExample(example));
+    return ((INoteDao) getDao()).findAll(spec, pgbl);
+  }
+
+//  // read - one
+//  @Transactional(readOnly = true)
+//  @Override
+//  public Note findOne(final long id){
+//    return getDao().findOne(id);
+//  }
+//
+//  // read - all
+//  /**
+//   *
+//   * @return
+//   */
+//  @Transactional(readOnly = true)
+//  @Override
+//  public List<Note> findAll(){
+//    return Lists.newArrayList(getDao().findAll());
+//  }
+//
+//  @Override
+//  public Page<Note> findPaginated(final int page, final int size){
+//    return getDao().findAll(new PageRequest(page, size));
+//  }
+//
   // write
   @Override
   public Note create(final Note entity){
@@ -82,15 +114,15 @@ public class NoteService implements INoteService<Note>{
     getDao().delete(entity);
   }
 
-  @Override
-  public void deleteById(final long entityId){
-    getDao().delete(entityId);
-  }
-
-  @Override
-  public Page<Note> findPaginated(Pageable pageable){
-    return getDao().findAll(pageable);
-  }
+//  @Override
+//  public void deleteById(final long entityId){
+//    getDao().delete(entityId);
+//  }
+//
+//  @Override
+//  public Page<Note> findPaginated(Pageable pageable){
+//    return getDao().findAll(pageable);
+//  }
 
   protected PagingAndSortingRepository<Note, Long> getDao(){
     return dao;

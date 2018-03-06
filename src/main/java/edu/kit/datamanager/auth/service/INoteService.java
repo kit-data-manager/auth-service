@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.auth.service;
 
+import edu.kit.datamanager.auth.domain.AclEntry;
 import edu.kit.datamanager.auth.domain.Note;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -25,15 +26,23 @@ import org.springframework.data.domain.Pageable;
  * @author jejkal
  */
 public interface INoteService<T>{
-  // read - one
 
-  T findOne(final long id);
+  public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission);
 
-  // read - all
-  List<T> findAll();
+  public Page<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
 
-  Page<T> findPaginated(int page, int size);
+  public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission);
 
+  public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
+
+//// read - one
+//  T findOne(final long id);
+//
+//  // read - all
+//  List<T> findAll();
+//
+//  Page<T> findPaginated(int page, int size);
+//
   // write
   T create(final T entity);
 
@@ -41,7 +50,7 @@ public interface INoteService<T>{
 
   void delete(final T entity);
 
-  void deleteById(final long entityId);
-
-  Page<Note> findPaginated(Pageable pageable);
+//  void deleteById(final long entityId);
+//
+//  Page<Note> findPaginated(Pageable pageable);
 }

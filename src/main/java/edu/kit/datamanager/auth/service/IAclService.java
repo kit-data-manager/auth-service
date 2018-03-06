@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth;
-
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
+package edu.kit.datamanager.auth.service;
 
 /**
  *
  * @author jejkal
  */
-@Configuration
-@EnableTransactionManagement
-@EnableJpaRepositories(basePackages = "edu.kit.datamanager.auth")
-@PropertySource("classpath:application.properties")
-@EntityScan(basePackages = {"edu.kit.datamanager.auth.domain"})
-public class JPAPersistenceConfig{
+public interface IAclService<T>{
 
+  // write
+  T create(final T entity);
+
+  T update(final T entity);
+
+  void delete(final T entity);
+
+  void deleteById(final long entityId);
 }

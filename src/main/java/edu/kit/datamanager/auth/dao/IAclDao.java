@@ -16,23 +16,12 @@
 package edu.kit.datamanager.auth.dao;
 
 import edu.kit.datamanager.auth.domain.AclEntry;
-import edu.kit.datamanager.auth.domain.Note;
-import java.util.List;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
  *
  * @author jejkal
  */
-public interface INoteDao extends JpaRepository<Note, Long>, JpaSpecificationExecutor<Note>{
-
-  public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission);
-
-  public Page<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
-
-  public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission);
+public interface IAclDao extends JpaRepository<AclEntry, Long>{
 
 }

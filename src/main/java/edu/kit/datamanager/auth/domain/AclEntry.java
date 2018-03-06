@@ -15,38 +15,41 @@
  */
 package edu.kit.datamanager.auth.domain;
 
-import java.io.Serializable;
-import java.util.Set;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
-import javax.persistence.Version;
 import lombok.Data;
-import org.springframework.hateoas.ResourceSupport;
 
 /**
  *
  * @author jejkal
  */
 @Entity
-@Table(name = "note_inline")
+@Table(name = "myAclEntry")
 @Data
-public class Note extends ResourceSupport implements Serializable{
+public class AclEntry{
+
+  public enum PERMISSION{
+    READ,
+    WRITE,
+    DELETE,
+    ADMINISTRATE
+  }
+
+  public AclEntry(){
+  }
+
+  public AclEntry(String sid, PERMISSION permission){
+    this();
+    this.sid = sid;
+    this.permission = permission;
+  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id")
-  private Long noteId;
-  @Version
-  @Column(name = "VERSION")
-  private Long version;
-  private String value;
-  @OneToMany(cascade = CascadeType.ALL)
-  private Set<AclEntry> acls;
-
+  private Long id;
+  private String sid;
+  private PERMISSION permission;
 }

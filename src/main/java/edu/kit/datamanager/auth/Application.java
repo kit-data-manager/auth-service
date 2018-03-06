@@ -15,6 +15,9 @@
  */
 package edu.kit.datamanager.auth;
 
+import edu.kit.datamanager.auth.service.IAclService;
+import edu.kit.datamanager.auth.service.INoteService;
+import edu.kit.datamanager.auth.service.impl.NoteService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InjectionPoint;
@@ -23,7 +26,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
-import org.springframework.security.acls.model.AclService;
 
 /**
  *
@@ -39,9 +41,19 @@ public class Application{
     return LoggerFactory.getLogger(targetClass.getCanonicalName());
   }
 
+  @Bean
+  public IAclService myAclService(){
+    return new edu.kit.datamanager.auth.service.impl.AclService();
+  }
+
+  @Bean
+  public INoteService noteService(){
+    return new NoteService();
+  }
+
 //  @Bean
-//  public UserService userService(){
-//    return new UserService();
+//  public Filter shallowETagHeaderFilter(){
+//    return new ShallowEtagHeaderFilter();
 //  }
   public static void main(String[] args){
     ApplicationContext ctx = SpringApplication.run(Application.class, args);

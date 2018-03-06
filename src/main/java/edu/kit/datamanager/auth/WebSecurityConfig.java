@@ -70,6 +70,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
             .addFilterBefore(new JwtAuthenticationFilter(authenticationManager()), AbstractPreAuthenticatedProcessingFilter.class)
             .addFilterBefore(new BasicAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
             .authorizeRequests().antMatchers("/api/v1/login").permitAll().antMatchers("/**").authenticated();
+   http.headers().cacheControl().disable();
     //.authorizeRequests()
     //.antMatchers("/api/v1/login").permitAll()
     // .antMatchers("/admin/**").hasAuthority("ADMIN")
