@@ -15,8 +15,7 @@
  */
 package edu.kit.datamanager.auth.domain;
 
-import edu.kit.dama.Constants;
-import edu.kit.dama.entities.dc40.Agent;
+import edu.kit.datamanager.Constants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.HashSet;

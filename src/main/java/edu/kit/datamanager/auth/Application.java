@@ -15,17 +15,25 @@
  */
 package edu.kit.datamanager.auth;
 
-import edu.kit.datamanager.auth.service.IAclService;
 import edu.kit.datamanager.auth.service.INoteService;
+import edu.kit.datamanager.auth.service.UserRepositoryImpl;
+import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
 import edu.kit.datamanager.auth.service.impl.NoteService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.TopicExchange;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Scope;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
  *
@@ -42,8 +50,8 @@ public class Application{
   }
 
   @Bean
-  public IAclService myAclService(){
-    return new edu.kit.datamanager.auth.service.impl.AclService();
+  public CustomUserDetailsService customUserDetailsService(){
+    return new CustomUserDetailsService();
   }
 
   @Bean
@@ -51,6 +59,35 @@ public class Application{
     return new NoteService();
   }
 
+  @Bean
+  public ConnectionFactory connectionFactory(){
+    return new CachingConnectionFactory("localhost");
+  }
+
+  @Bean
+  public AmqpAdmin amqpAdmin(){
+    return new RabbitAdmin(connectionFactory());
+  }
+
+  @Bean
+  public RabbitTemplate rabbitTemplate(){
+    return new RabbitTemplate(connectionFactory());
+  }
+
+  @Bean
+  TopicExchange exchange(){
+    return new TopicExchange("topic_note");
+  }
+
+  @Bean
+  public BCryptPasswordEncoder passwordEncoder(){
+    return new BCryptPasswordEncoder();
+  }
+
+//  @Bean
+//  public Queue myQueue(){
+//    return new Queue("myqueue");
+//  }
 //  @Bean
 //  public Filter shallowETagHeaderFilter(){
 //    return new ShallowEtagHeaderFilter();

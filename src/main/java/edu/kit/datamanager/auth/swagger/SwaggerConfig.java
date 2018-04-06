@@ -67,8 +67,10 @@ public class SwaggerConfig{
 
     return new Docket(DocumentationType.SWAGGER_2)
             .select()
-            .apis(RequestHandlerSelectors.basePackage("edu.kit.datamanager.auth"))
-            .paths(regex("/api/v1/sessions/*"))
+            .apis(RequestHandlerSelectors.basePackage("edu.kit.datamanager.auth.web"))
+            //.paths(regex("/v1/*"))
+            // .apis(RequestHandlerSelectors.any())
+            .paths(PathSelectors.any())
             .build().apiInfo(apiInfo())
             //  .securitySchemes(newArrayList(auth))
             //  .securityContexts(securityContexts);

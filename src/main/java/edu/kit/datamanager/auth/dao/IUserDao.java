@@ -15,13 +15,23 @@
  */
 package edu.kit.datamanager.auth.dao;
 
-import edu.kit.datamanager.auth.domain.AclEntry;
+import edu.kit.datamanager.auth.domain.RepoUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  *
  * @author jejkal
  */
-public interface IAclDao extends JpaRepository<AclEntry, Long>{
+public interface IUserDao extends JpaRepository<RepoUser, Long>, JpaSpecificationExecutor<RepoUser>{
 
+  public RepoUser findByUsername(String username);
+
+  @Override
+  @PreAuthorize("@patchSecurityService.canUpdate(#s)")
+  public <S extends RepoUser> S save(S s);
+
+  
+  
 }

@@ -13,24 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.web.security;
+package edu.kit.datamanager.auth.domain;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import lombok.Data;
 
 /**
  *
  * @author jejkal
  */
-@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
-public class InvalidAuthenticationException extends AuthenticationException{
+@Data
+public class DataEntryMetadataElement{
 
-  public InvalidAuthenticationException(String msg){
-    super(msg);
-  }
+  private String key;
+  private String value;
 
-  public InvalidAuthenticationException(String msg, Throwable t){
-    super(msg, t);
-  }
 }

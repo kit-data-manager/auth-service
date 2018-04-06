@@ -35,7 +35,7 @@ public class CustomRestMvcConfiguration{
 
       @Override
       public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config){
-        config.setBasePath("/api/v2");
+        config.setBasePath("/api");
       }
     };
   }

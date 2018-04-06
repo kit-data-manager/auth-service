@@ -15,7 +15,7 @@
  */
 package edu.kit.datamanager.auth;
 
-import edu.kit.datamanager.auth.service.UserRepositoryImpl;
+import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
 import edu.kit.datamanager.auth.web.security.JwtAuthenticationFilter;
 import edu.kit.datamanager.auth.web.security.JwtAuthenticationProvider;
 import edu.kit.datamanager.auth.web.security.NoopAuthenticationEventPublisher;
@@ -28,6 +28,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
@@ -46,6 +48,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
   // @Value("${secret.key}")
   private String secretKey = "test";
 
+  @Autowired
+  private CustomUserDetailsService userDetailsService;
+
+  @Autowired
+  private BCryptPasswordEncoder passwordEncoder;
+
 //  @Autowired
 //  private UserRepositoryImpl userRepositoryImpl;
   public WebSecurityConfig(){
@@ -59,7 +67,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 //  }
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(secretKey, new UserRepositoryImpl()));
+    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(secretKey, userDetailsService, passwordEncoder));
   }
 
   @Override
@@ -69,8 +77,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
             .csrf().disable()
             .addFilterBefore(new JwtAuthenticationFilter(authenticationManager()), AbstractPreAuthenticatedProcessingFilter.class)
             .addFilterBefore(new BasicAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class)
-            .authorizeRequests().antMatchers("/api/v1/login").permitAll().antMatchers("/**").authenticated();
-   http.headers().cacheControl().disable();
+            .authorizeRequests().antMatchers("/api/v1/login").permitAll().antMatchers("/swagger-ui.html").permitAll().antMatchers("/api/v1").authenticated();
+    http.headers().cacheControl().disable();
     //.authorizeRequests()
     //.antMatchers("/api/v1/login").permitAll()
     // .antMatchers("/admin/**").hasAuthority("ADMIN")

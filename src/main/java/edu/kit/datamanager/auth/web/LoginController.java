@@ -44,14 +44,15 @@ public class LoginController{
 
   private Logger LOGGER;
 
-  @ApiOperation(value = "Login and receive a JSON Web Token.", notes = "The caller is authenticated via HTTP Basic authentication. The resulting JSON Web Token is returned directly in the response and can be provided to subsequent calls "
-          + "via X-AUTH-TOKEN header.")
+  @ApiOperation(value = "Perform user login.",
+          notes = "The caller authenticates via HTTP Basic and will receive a JSON Web Token in the response body. "
+          + "This token must then be provided in subsequent calls to other services within the Authentication header as Bearer token.")
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "Login successful")})
-  @PostMapping("/api/v1/login")
+  @PostMapping("/v1/login")
   public String login(@RequestParam("groupId") String groupId, Authentication authentication){
     JwtAuthenticationToken token = ((JwtAuthenticationToken) authentication);
-    //   LOGGER.debug("Successfully logged in as user {}.", token.getUserId());
+    LOGGER.debug("Successfully logged in as user {}.", token.getUserId());
     return token.getToken();
   }
 

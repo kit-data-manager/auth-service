@@ -16,6 +16,7 @@
 package edu.kit.datamanager.auth.web.security;
 
 import java.io.IOException;
+import java.util.Enumeration;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -31,7 +32,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter{//extends UsernamePasswordAuthenticationFilter{
 
-  private AuthenticationManager authenticationManager;
+  private final String AUTHENTICATION_HEADER = "Authentication";
+  private final String BEARER_TOKEN_IDENTIFIER = "Bearer ";
+  private final AuthenticationManager authenticationManager;
 
   public JwtAuthenticationFilter(AuthenticationManager authenticationManager){
     this.authenticationManager = authenticationManager;
@@ -39,12 +42,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{//extends User
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException{
-    String authToken = request.getHeader("X-AUTH-TOKEN");
-    if(authToken == null){
+    String authToken = request.getHeader(AUTHENTICATION_HEADER);
+
+    if(authToken == null || !authToken.startsWith(BEARER_TOKEN_IDENTIFIER)){
       chain.doFilter(request, response);
       return;
     }
-    Authentication authentication = authenticationManager.authenticate(new JwtAuthenticationToken(authToken));
+    Authentication authentication = authenticationManager.authenticate(new JwtAuthenticationToken(authToken.substring(BEARER_TOKEN_IDENTIFIER.length())));
     SecurityContextHolder.getContext().setAuthentication(authentication);
     chain.doFilter(request, response);
   }

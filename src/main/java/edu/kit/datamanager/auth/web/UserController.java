@@ -15,34 +15,99 @@
  */
 package edu.kit.datamanager.auth.web;
 
-import edu.kit.dama.entities.auth.Session;
-import edu.kit.datamanager.auth.domain.User;
+import com.github.fge.jsonpatch.JsonPatch;
+import edu.kit.datamanager.auth.domain.Note;
+import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
+import edu.kit.datamanager.auth.web.hateoas.event.PaginatedResultsRetrievedEvent;
+import edu.kit.datamanager.controller.GenericResourceController;
 import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.data.rest.webmvc.BasePathAwareController;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  *
  * @author jejkal
  */
-//@Api(value = "User Controller")
-//@ApiResponses(
-//        value = {
-//          @ApiResponse(code = 401, message = "Unauthorized")
-//          ,
-//        @ApiResponse(code = 403, message = "Forbidden")
-//          ,
-//        @ApiResponse(code = 500, message = "Internal server error")
-//        })
-//@BasePathAwareController
-public class UserController{
+@Controller
+@RequestMapping(value = "/v1/users")
+@Api(value = "User Management")
+public class UserController extends GenericResourceController<RepoUser>{
+
+  private Logger LOGGER;
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
+
+  private final CustomUserDetailsService userDetailsService;
+
+  public UserController(CustomUserDetailsService userDetailsService){
+    super();
+    this.userDetailsService = userDetailsService;
+  }
+
+  @Override
+  public ResponseEntity<RepoUser> create(RepoUser user, WebRequest request, HttpServletResponse response, Authentication authentication){
+    user.setId(null);
+    if(user.getPassword() == null){
+      return ResponseEntity.badRequest().build();
+    }
+    RepoUser newUser = userDetailsService.create(user);
+    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response, authentication)).toUri()).build();
+  }
+
+  @Override
+  public ResponseEntity<List<RepoUser>> findAll(Pageable pgbl, WebRequest wr, HttpServletResponse response, final UriComponentsBuilder uriBuilder, Authentication a){
+    Page<RepoUser> page = userDetailsService.findAll(null, pgbl);
+
+    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(Note.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), page.getSize()));
+
+    return ResponseEntity.ok(page.getContent());
+  }
+
+  @Override
+  public ResponseEntity<RepoUser> findById(@PathVariable(value = "id") Long id, WebRequest request, HttpServletResponse response, Authentication authentication){
+    Optional<RepoUser> result = userDetailsService.findById(id);
+    if(!result.isPresent()){
+      return ResponseEntity.notFound().build();
+    }
+    RepoUser user = result.get();
+    user.erasePassword();
+    return ResponseEntity.ok(user);
+  }
+
+  @Override
+  public ResponseEntity<Resources<RepoUser>> findByExample(final RepoUser c, final Pageable pgbl, final WebRequest wr, final HttpServletResponse hsr, final UriComponentsBuilder uriBuilder, Authentication a){
+    System.out.println("FIND EX");
+    return null;
+  }
+
+  @Override
+  public ResponseEntity patch(Long l, JsonPatch jp, WebRequest wr, HttpServletResponse hsr, Authentication a){
+    return null;
+  }
+
+  @Override
+  public ResponseEntity delete(Long l, WebRequest wr, HttpServletResponse hsr, Authentication a){
+    return null;
+  }
 
 //  private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 //

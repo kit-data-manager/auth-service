@@ -22,12 +22,15 @@ import edu.kit.datamanager.auth.domain.AclEntry;
 import edu.kit.datamanager.auth.domain.Note;
 import edu.kit.datamanager.auth.service.INoteService;
 import java.util.List;
+import java.util.Optional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specifications;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,16 +41,16 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
-public class NoteService implements INoteService<Note>{
+public class NoteService implements INoteService{
 
   @Autowired
   private INoteDao dao;
+
   @PersistenceContext
   private EntityManager em;
 
   public NoteService(){
     super();
-
   }
 
   @Override
@@ -65,40 +68,18 @@ public class NoteService implements INoteService<Note>{
   @Override
   @Transactional(readOnly = true)
   public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission){
-    return ((INoteDao) getDao()).findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(noteId, sids, permission);
+    Optional<Note> theNote = ((INoteDao) getDao()).findById(noteId);
+    //TODO: check permission
+    return theNote.get();
   }
 
   @Override
   @Transactional(readOnly = true)
   public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl){
-    Specifications<Note> spec = Specifications.where(PermissionSpecification.toSpecification(sids, permission)).and(new ByExampleSpecification(em).byExample(example));
+    Specification<Note> spec = Specification.where(PermissionSpecification.toSpecification(sids, permission)).and(new ByExampleSpecification(em).byExample(example));
     return ((INoteDao) getDao()).findAll(spec, pgbl);
   }
 
-//  // read - one
-//  @Transactional(readOnly = true)
-//  @Override
-//  public Note findOne(final long id){
-//    return getDao().findOne(id);
-//  }
-//
-//  // read - all
-//  /**
-//   *
-//   * @return
-//   */
-//  @Transactional(readOnly = true)
-//  @Override
-//  public List<Note> findAll(){
-//    return Lists.newArrayList(getDao().findAll());
-//  }
-//
-//  @Override
-//  public Page<Note> findPaginated(final int page, final int size){
-//    return getDao().findAll(new PageRequest(page, size));
-//  }
-//
-  // write
   @Override
   public Note create(final Note entity){
     return getDao().save(entity);
@@ -114,17 +95,13 @@ public class NoteService implements INoteService<Note>{
     getDao().delete(entity);
   }
 
-//  @Override
-//  public void deleteById(final long entityId){
-//    getDao().delete(entityId);
-//  }
-//
-//  @Override
-//  public Page<Note> findPaginated(Pageable pageable){
-//    return getDao().findAll(pageable);
-//  }
-
   protected PagingAndSortingRepository<Note, Long> getDao(){
     return dao;
+  }
+
+  @Override
+  public Health health(){
+    return Health.up()
+            .withDetail("Notes", dao.count()).build();
   }
 }

@@ -15,32 +15,74 @@
  */
 package edu.kit.datamanager.auth.web;
 
+import com.github.fge.jsonpatch.JsonPatch;
+import edu.kit.datamanager.auth.domain.Group;
+import io.swagger.annotations.Api;
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.Resources;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.context.request.WebRequest;
+import edu.kit.datamanager.controller.GenericResourceController;
+import java.util.List;
+import org.slf4j.Logger;
+import org.springframework.web.util.UriComponentsBuilder;
+
 /**
  *
  * @author jejkal
  */
-//@Path("/groups")
-//@Api(value = "Group Management")
-//@ApiResponses(
-//        value = {
-//            @ApiResponse(code = 401, message = "Unauthorized")
-//            ,
-//        @ApiResponse(code = 403, message = "Forbidden")
-//            ,
-//        @ApiResponse(code = 500, message = "Internal server error")
-//        })
-//@Produces("application/json")
-public class GroupController{// extends AbstractBaseResource<Group> {
+@Controller
+@RequestMapping(value = "/v1/groups")
+@Api(value = "Group Management")
+public class GroupController extends GenericResourceController<Group>{
 
-//    private static final Logger LOGGER = LoggerFactory.getLogger(GroupController.class);
-//    @Context
-//    ContainerRequestContext context;
-//
-//    @Override
-//    public ContainerRequestContext getContext() {
-//        return context;
-//    }
-//
+  private Logger LOGGER;
+
+  public GroupController(){
+    super();
+  }
+
+  @Override
+  public ResponseEntity<Group> create(@RequestBody Group group, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+    return null;
+  }
+
+  @Override
+  public ResponseEntity<List<Group>> findAll(Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder, final Authentication authentication){
+    System.out.println("HERE");
+    return null;
+  }
+
+  @Override
+  public ResponseEntity<Group> findById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+    System.out.println("BYID");
+    return null;
+  }
+
+  @Override
+  public ResponseEntity<Resources<Group>> findByExample(Group example, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder, final Authentication authentication){
+    System.out.println("EXAMPLE");
+    return null;
+  }
+
+  @Override
+  public ResponseEntity patch(@PathVariable("id")
+          final Long id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+    return null;
+  }
+
+  @Override
+  public ResponseEntity delete(@PathVariable("id")
+          final Long id, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+    return null;
+  }
+
 //    @POST
 //    @Path(value = "/")
 //    @ApiOperation(value = "Create a new user group.",

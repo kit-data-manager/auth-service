@@ -13,24 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.web.security;
+package edu.kit.datamanager.auth.test;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import org.springframework.security.test.context.support.WithSecurityContext;
 
 /**
  *
  * @author jejkal
  */
-@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
-public class InvalidAuthenticationException extends AuthenticationException{
+@WithSecurityContext(factory = WithMockCustomUserSecurityContextFactory.class)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface WithMockCustomUser{
 
-  public InvalidAuthenticationException(String msg){
-    super(msg);
-  }
+  String username() default "admin";
 
-  public InvalidAuthenticationException(String msg, Throwable t){
-    super(msg, t);
-  }
+  String name() default "admin";
 }

@@ -1,3 +1,10 @@
+package edu.kit.datamanager.auth;
+
+
+import org.springframework.boot.actuate.health.AbstractHealthIndicator;
+import org.springframework.boot.actuate.health.Health;
+import org.springframework.stereotype.Component;
+
 /*
  * Copyright 2018 Karlsruhe Institute of Technology.
  *
@@ -13,24 +20,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.web.security;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
 /**
  *
  * @author jejkal
  */
-@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
-public class InvalidAuthenticationException extends AuthenticationException{
+@Component
+public class NoteHealthCheck extends AbstractHealthIndicator{
 
-  public InvalidAuthenticationException(String msg){
-    super(msg);
-  }
-
-  public InvalidAuthenticationException(String msg, Throwable t){
-    super(msg, t);
+  @Override
+  protected void doHealthCheck(Health.Builder bldr) throws Exception{
+    // TODO implement some check
+    boolean running = false;
+    if(running){
+      bldr.up().withDetail("test", "OK!");
+    } else{
+      bldr.down().withDetail("test", "OK!");
+    }
   }
 }

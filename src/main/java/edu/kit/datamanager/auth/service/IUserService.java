@@ -13,24 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.web.security;
+package edu.kit.datamanager.auth.service;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import edu.kit.datamanager.auth.domain.RepoUser;
+import java.util.Optional;
+import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 /**
  *
  * @author jejkal
  */
-@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
-public class InvalidAuthenticationException extends AuthenticationException{
+public interface IUserService extends HealthIndicator{
 
-  public InvalidAuthenticationException(String msg){
-    super(msg);
-  }
+  public Page<RepoUser> findAll(RepoUser example, Pageable pgbl);
 
-  public InvalidAuthenticationException(String msg, Throwable t){
-    super(msg, t);
-  }
+  Optional<RepoUser> findById(final Long id);
+
+  RepoUser create(final RepoUser entity);
+
+  RepoUser update(final RepoUser entity);
+
+  void delete(final RepoUser entity);
 }

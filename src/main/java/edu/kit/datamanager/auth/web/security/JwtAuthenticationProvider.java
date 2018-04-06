@@ -16,24 +16,28 @@
 package edu.kit.datamanager.auth.web.security;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import edu.kit.datamanager.auth.domain.User;
+import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.auth.service.IUserService;
+import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
 import edu.kit.datamanager.auth.util.JsonMapper;
-import edu.kit.datamanager.auth.service.UserRepositoryImpl;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import static java.util.stream.Collectors.toList;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -44,11 +48,13 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMapper{
 
   private final String secretKey;
-  private final UserRepositoryImpl userRepositoryImpl;
+  private final CustomUserDetailsService userDetailsService;
+  private final BCryptPasswordEncoder passwordEncoder;
 
-  public JwtAuthenticationProvider(String secretKey, UserRepositoryImpl userRepositoryImpl){
+  public JwtAuthenticationProvider(String secretKey, CustomUserDetailsService userDetailsService, BCryptPasswordEncoder passwordEncoder){
     this.secretKey = secretKey;
-    this.userRepositoryImpl = userRepositoryImpl;
+    this.userDetailsService = userDetailsService;
+    this.passwordEncoder = passwordEncoder;
   }
 
   @Override
@@ -67,7 +73,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
     }
   }
 
-  private Authentication getJwtAuthentication(User user) throws JsonProcessingException{
+  private Authentication getJwtAuthentication(RepoUser user) throws JsonProcessingException{
     ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
     String groupId = attr.getRequest().getParameter("groupId");
     if(groupId == null){
@@ -80,7 +86,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
     user.getRoles().forEach((r) -> {
       roleStrings.add(r);
     });
-    return new JwtAuthenticationToken(grantedAuthorities(roleStrings), user.getId(), user.getIdentifier(), token);
+    return new JwtAuthenticationToken(grantedAuthorities(roleStrings), Long.toString(user.getId()), user.getIdentifier(), token);
   }
 
   @SuppressWarnings("unchecked")
@@ -102,7 +108,37 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
     return roles.stream().map(String::toString).map(SimpleGrantedAuthority::new).collect(toList());
   }
 
-  private User getUser(Authentication authentication) throws IOException{
-    return userRepositoryImpl.loadUser(authentication.getName(), (String) authentication.getCredentials()).orElseThrow(() -> new InvalidAuthenticationException("Access denied"));
+  private RepoUser getUser(Authentication authentication) throws IOException{
+    System.out.println("READ");
+    RepoUser theUser = (RepoUser) userDetailsService.loadUserByUsername(authentication.getName());
+    System.out.println("USER " + theUser);
+    //check if this is needed....
+    if(theUser.isEnabled()){
+      System.out.println("DENO");
+      throw new InvalidAuthenticationException("Access denied");
+    }
+    String password = theUser.getPassword();
+    String providedPassword = (String) authentication.getCredentials();
+    System.out.println("COMPARE " + passwordEncoder.matches(providedPassword, password));
+    if(providedPassword == null || !passwordEncoder.matches(providedPassword, password)){
+      System.out.println("NULL?");
+      if(theUser.isEnabled()){
+        System.out.println("ENA");
+        theUser.setLoginFailures(Math.min(3, theUser.getLoginFailures() + 1));
+        if(theUser.getLoginFailures() == 3){
+          theUser.setLocked(true);
+          theUser.setLockedUntil(DateUtils.addHours(new Date(), 1));
+          System.out.println("UPDA");
+          userDetailsService.update(theUser);
+          System.out.println("DONE");
+        }
+      }
+      System.out.println("DENI");
+      throw new InvalidAuthenticationException("Access denied");
+    }
+    System.out.println("ERA");
+    theUser.erasePassword();
+    System.out.println("RETUR");
+    return theUser;
   }
 }

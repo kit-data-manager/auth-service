@@ -22,22 +22,28 @@ import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.diff.JsonDiff;
 import edu.kit.datamanager.auth.domain.AclEntry;
+import edu.kit.datamanager.auth.domain.DataEntry;
 import edu.kit.datamanager.auth.domain.Note;
-import edu.kit.datamanager.auth.service.IAclService;
 import edu.kit.datamanager.auth.service.INoteService;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.persistence.EntityNotFoundException;
 import javax.servlet.http.HttpServletResponse;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resources;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -45,8 +51,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
@@ -60,10 +68,10 @@ public class NoteController{
   private ApplicationEventPublisher eventPublisher;
 
   @Autowired
-  private INoteService service;
+  private INoteService noteService;
 
   @Autowired
-  private IAclService myAclService;
+  private RabbitTemplate rabbitTemplate;
 
   public NoteController(){
     super();
@@ -113,7 +121,7 @@ public class NoteController{
       sids.add("ROLE_" + auth.getAuthority());
     });
 
-    Page<Note> pge = service.findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, AclEntry.PERMISSION.READ, request);
+    Page<Note> pge = noteService.findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, AclEntry.PERMISSION.READ, request);
 
     List<Note> res = new ArrayList<>();
     for(Note n : pge.getContent()){
@@ -130,17 +138,17 @@ public class NoteController{
   @RequestMapping(value = "/{id}", method = RequestMethod.GET)
   @ResponseBody
   public ResponseEntity<Note> findById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response, final Authentication authentication){
-
     List<String> sids = new ArrayList<>();
     sids.add((String) authentication.getPrincipal());
     authentication.getAuthorities().forEach((auth) -> {
       sids.add("ROLE_" + auth.getAuthority());
     });
 
-    Note n = service.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.READ);
-    System.out.println("VERION " + n.getVersion());
+    Note n = noteService.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.READ);
+    if(n == null){
+      throw new EntityNotFoundException("Note with id " + id + " not found.");
+    }
     if(request.checkNotModified(Long.toString(n.getVersion()))){
-      System.out.println("NULL!");
       return null;
     }
     n.add(new Link("http://heise.de/" + n.getNoteId(), "_self"));
@@ -158,7 +166,7 @@ public class NoteController{
       sids.add("ROLE_" + auth.getAuthority());
     });
 
-    Note n = service.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.READ);
+    Note n = noteService.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.READ);
     Set<AclEntry> acls = n.getAcls();
 
     final Link link = ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).findPermissions(id, request, response, authentication)).withSelfRel();
@@ -175,7 +183,7 @@ public class NoteController{
       sids.add("ROLE_" + auth.getAuthority());
     });
 
-    Page<Note> pge = service.findAll(example, sids, AclEntry.PERMISSION.READ, request);
+    Page<Note> pge = noteService.findAll(example, sids, AclEntry.PERMISSION.READ, request);
 
     List<Note> res = new ArrayList<>();
     for(Note n : pge.getContent()){
@@ -213,7 +221,7 @@ public class NoteController{
       note.getAcls().add(entry);
     }
 
-    note = (Note) service.create(note);
+    note = (Note) noteService.create(note);
 
     return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(note, response, authentication)).toUri()).build();
   }
@@ -228,7 +236,7 @@ public class NoteController{
       sids.add("ROLE_" + auth.getAuthority());
     });
 
-    Note n = service.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.READ);
+    Note n = noteService.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.WRITE);
 
     if(!request.checkNotModified(Long.toString(n.getVersion()))){
       return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED).build();
@@ -241,7 +249,7 @@ public class NoteController{
       if(diff.elements().hasNext()){
         //things have changed
         Note patched = mapper.treeToValue(patchedNode, Note.class);
-        n = (Note) service.update(patched);
+        n = (Note) noteService.update(patched);
       }
     } catch(JsonPatchException | JsonProcessingException ex){
       ex.printStackTrace();
@@ -260,20 +268,51 @@ public class NoteController{
       sids.add("ROLE_" + auth.getAuthority());
     });
 
-    Note n = (Note) service.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.DELETE);
-    if(n == null){
-      throw new RuntimeException("Forbidden");
-    }
+    //service always return value or an appropriate error
+    //if this fails due to missing permissions FORBIDDEN is already thrown, if no note is found NOT FOUND is thrown
+    Note n = (Note) noteService.findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(id, sids, AclEntry.PERMISSION.DELETE);
 
-    System.out.println("VERION " + n.getVersion());
     if(!request.checkNotModified(Long.toString(n.getVersion()))){
-      System.out.println("NULL!");
       return null;
     }
-    //check permission
-    System.out.println("DELETE " + n);
-    service.delete(n);
+    noteService.delete(n);
     return ResponseEntity.noContent().build();
+  }
+
+  @RequestMapping(path = "/{id}/data/{path:.+}", method = RequestMethod.POST)
+  public ResponseEntity handleFileUpload(@PathVariable(value = "id") String resourceIdentifier,
+          @PathVariable(value = "path") String path,
+          @RequestPart("file") MultipartFile file, @RequestPart(name = "metadata", required = false) DataEntry entry){
+
+    System.out.println("PATH " + path);
+    System.out.println("Received " + file.getOriginalFilename());
+    if(entry != null){
+      System.out.println("META " + entry.getMetadata());
+    }
+
+    // ApplicationContext context = new AnnotationConfigApplicationContext(RabbitMQConfiguration.class);
+    //  AmqpTemplate template = context.getBean(AmqpTemplate.class);
+    rabbitTemplate.convertAndSend("topic_note", "note.data.update", path + "/" + file.getOriginalFilename());
+
+    return ResponseEntity.ok().build();
+  }
+
+  @RequestMapping(path = "/{id}/data", method = RequestMethod.GET)
+  @ResponseBody
+  public ResponseEntity handleFileDownloadRoot(@PathVariable(value = "id") String id){
+    System.out.println("DOWNLOAD ROOT");
+
+    return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + "myFile.txt" + "\"").body(new FileSystemResource(new File("/Users/jejkal/Downloads/0901c413b1d1ac33.pdf")));
+  }
+
+  @RequestMapping(path = "/{id}/data/{path:.+}", method = RequestMethod.GET)
+  @ResponseBody
+  public ResponseEntity handleFileDownload(@PathVariable(value = "id") String resourceIdentifier,
+          @PathVariable(value = "path") String path){
+    System.out.println("PATH " + path);
+    System.out.println("DOWNLOAD SUB");
+
+    return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF).header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + "myFile.txt" + "\"").body(new FileSystemResource(new File("/Users/jejkal/Downloads/0901c413b1d1ac33.pdf")));
   }
 
 //  @RequestMapping(params = {"page", "size"}, method = RequestMethod.GET)

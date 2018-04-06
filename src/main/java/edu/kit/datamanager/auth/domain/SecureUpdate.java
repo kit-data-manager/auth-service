@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.web.security;
+package edu.kit.datamanager.auth.domain;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author jejkal
  */
-@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
-public class InvalidAuthenticationException extends AuthenticationException{
+@Documented
+@Target(ElementType.FIELD)
+@Retention(RUNTIME)
+public @interface SecureUpdate{
 
-  public InvalidAuthenticationException(String msg){
-    super(msg);
-  }
-
-  public InvalidAuthenticationException(String msg, Throwable t){
-    super(msg, t);
-  }
+  String[] value();
 }

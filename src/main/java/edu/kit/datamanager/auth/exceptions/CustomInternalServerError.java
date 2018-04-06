@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.web.security;
+package edu.kit.datamanager.auth.exceptions;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  *
  * @author jejkal
  */
-@ResponseStatus(value = HttpStatus.UNAUTHORIZED)
-public class InvalidAuthenticationException extends AuthenticationException{
+@ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+public class CustomInternalServerError extends RuntimeException{
 
-  public InvalidAuthenticationException(String msg){
-    super(msg);
+  public CustomInternalServerError(){
+    super();
   }
 
-  public InvalidAuthenticationException(String msg, Throwable t){
-    super(msg, t);
+  public CustomInternalServerError(String message){
+    super(message);
   }
+
 }

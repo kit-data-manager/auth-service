@@ -27,6 +27,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Version;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.hateoas.ResourceSupport;
 
 /**
@@ -36,6 +37,7 @@ import org.springframework.hateoas.ResourceSupport;
 @Entity
 @Table(name = "note_inline")
 @Data
+@EqualsAndHashCode(callSuper = false)
 public class Note extends ResourceSupport implements Serializable{
 
   @Id

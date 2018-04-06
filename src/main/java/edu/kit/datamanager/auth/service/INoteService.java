@@ -18,6 +18,7 @@ package edu.kit.datamanager.auth.service;
 import edu.kit.datamanager.auth.domain.AclEntry;
 import edu.kit.datamanager.auth.domain.Note;
 import java.util.List;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,7 +26,7 @@ import org.springframework.data.domain.Pageable;
  *
  * @author jejkal
  */
-public interface INoteService<T>{
+public interface INoteService extends HealthIndicator{
 
   public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission);
 
@@ -36,19 +37,18 @@ public interface INoteService<T>{
   public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
 
 //// read - one
-//  T findOne(final long id);
-//
+  // Note findOne(final long id);
 //  // read - all
 //  List<T> findAll();
 //
 //  Page<T> findPaginated(int page, int size);
 //
   // write
-  T create(final T entity);
+  Note create(final Note entity);
 
-  T update(final T entity);
+  Note update(final Note entity);
 
-  void delete(final T entity);
+  void delete(final Note entity);
 
 //  void deleteById(final long entityId);
 //

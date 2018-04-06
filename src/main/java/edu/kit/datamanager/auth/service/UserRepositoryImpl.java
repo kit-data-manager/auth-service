@@ -15,8 +15,8 @@
  */
 package edu.kit.datamanager.auth.service;
 
-import edu.kit.dama.entities.Role;
-import edu.kit.datamanager.auth.domain.User;
+import edu.kit.datamanager.entities.Role;
+import edu.kit.datamanager.auth.domain.RepoUser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
@@ -30,16 +30,27 @@ public class UserRepositoryImpl{
 
   BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-  public Optional<User> loadUser(String username, String credentials){
-    User user1 = new User();
+  public Optional<RepoUser> loadUser(String username, String credentials){
+    RepoUser user1 = new RepoUser();
     user1.setIdentifier(username);
     user1.setActive(true);
     user1.setEmail("thomas.jejkal@kit.edu");
     user1.setRoles(new ArrayList<>(Arrays.asList(Role.USER.name(), Role.ADMINISTRATOR.name())));
     // "thomas.jejkal@kit.edu", "KIT", Arrays.asList("USER", "ADMIN"));
     // user1.activate(passwordEncoder.encode(credentials));
-    Optional<User> userOptional = Optional.of(user1);
+    Optional<RepoUser> userOptional = Optional.of(user1);
     return userOptional;
     //return userOptional.map(user -> user.isActive() ? user : null);
+  }
+  
+  public RepoUser loadUser(String username){
+      RepoUser user1 = new RepoUser();
+    user1.setIdentifier(username);
+    user1.setActive(true);
+    user1.setEmail("thomas.jejkal@kit.edu");
+    user1.setRoles(new ArrayList<>(Arrays.asList(Role.USER.name(), Role.ADMINISTRATOR.name())));
+    // "thomas.jejkal@kit.edu", "KIT", Arrays.asList("USER", "ADMIN"));
+    // user1.activate(passwordEncoder.encode(credentials));
+    return user1;
   }
 }

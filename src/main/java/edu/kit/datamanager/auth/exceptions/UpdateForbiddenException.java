@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.service;
+package edu.kit.datamanager.auth.exceptions;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  *
  * @author jejkal
  */
-public interface IAclService<T>{
+@ResponseStatus(value = HttpStatus.FORBIDDEN)
+public class UpdateForbiddenException extends RuntimeException{
 
-  // write
-  T create(final T entity);
+  public UpdateForbiddenException(){
+    super();
+  }
 
-  T update(final T entity);
+  public UpdateForbiddenException(String message){
+    super(message);
+  }
 
-  void delete(final T entity);
-
-  void deleteById(final long entityId);
 }

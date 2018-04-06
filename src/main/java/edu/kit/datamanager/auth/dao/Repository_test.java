@@ -24,7 +24,7 @@ import org.springframework.stereotype.Repository;
  * @author jejkal
  */
 @Repository
-public interface NoteRepository_test extends JpaRepository<Note, Long>{//,JpaSpecificationExecutor{
+public interface Repository_test extends JpaRepository<Note, Long>{//,JpaSpecificationExecutor{
 
 //  @Override
 //  @PostFilter(value = "hasPermission(filterObject, 'READ')")

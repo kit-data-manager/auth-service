@@ -15,7 +15,6 @@
  */
 package edu.kit.datamanager.auth.dao;
 
-import edu.kit.dama.entities.Permission;
 import edu.kit.datamanager.auth.domain.AclEntry;
 import edu.kit.datamanager.auth.domain.Note;
 import java.util.Arrays;
@@ -27,7 +26,6 @@ import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.domain.Specifications;
 
 /**
  *
@@ -35,7 +33,7 @@ import org.springframework.data.jpa.domain.Specifications;
  */
 public class PermissionSpecification{
 
-  public static Specifications<Note> andIfPermission(Specifications<Note> specifications, final List<String> sids, AclEntry.PERMISSION permission){
+  public static Specification<Note> andIfPermission(Specification<Note> specifications, final List<String> sids, AclEntry.PERMISSION permission){
     specifications = specifications.and(toSpecification(sids, permission));
     return specifications;
   }
