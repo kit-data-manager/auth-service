@@ -22,7 +22,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.hateoas.Resources;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,7 +37,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @author jejkal
  */
 @Controller
-@RequestMapping(value = "/v1/groups")
+@RequestMapping(value = "/api/v1/groups")
 @Api(value = "Group Management")
 public class GroupController extends GenericResourceController<Group>{
 
@@ -49,37 +48,37 @@ public class GroupController extends GenericResourceController<Group>{
   }
 
   @Override
-  public ResponseEntity<Group> create(@RequestBody Group group, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+  public ResponseEntity<Group> create(@RequestBody Group group, WebRequest request, final HttpServletResponse response){
     return null;
   }
 
   @Override
-  public ResponseEntity<List<Group>> findAll(Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder, final Authentication authentication){
+  public ResponseEntity<List<Group>> findAll(Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     System.out.println("HERE");
     return null;
   }
 
   @Override
-  public ResponseEntity<Group> findById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+  public ResponseEntity<Group> findById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response){
     System.out.println("BYID");
     return null;
   }
 
   @Override
-  public ResponseEntity<Resources<Group>> findByExample(Group example, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder, final Authentication authentication){
+  public ResponseEntity<Resources<Group>> findByExample(Group example, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     System.out.println("EXAMPLE");
     return null;
   }
 
   @Override
   public ResponseEntity patch(@PathVariable("id")
-          final Long id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+          final Long id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response){
     return null;
   }
 
   @Override
   public ResponseEntity delete(@PathVariable("id")
-          final Long id, WebRequest request, final HttpServletResponse response, final Authentication authentication){
+          final Long id, WebRequest request, final HttpServletResponse response){
     return null;
   }
 

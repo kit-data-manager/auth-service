@@ -49,6 +49,11 @@ public class OEntity<T>{
   }
 
   public boolean canUpdate(List<GrantedAuthority> authorities){
+    if(originalObj == null){
+      //creation detected
+      return true;
+    }
+
     for(Field field : this.getClass().getDeclaredFields()){
       SecureUpdate secureUpdate = field.getAnnotation(SecureUpdate.class);
       if(secureUpdate != null){
@@ -60,7 +65,6 @@ public class OEntity<T>{
 
           if(!Objects.equals(persistedField, originalField)){
             boolean canUpdate = true;
-
             for(String role : allowedRoles){//go though all roles allowed to update
               for(GrantedAuthority authority : authorities){//check owned authorities
                 if(authority.getAuthority().equalsIgnoreCase(role)){//the current authority allows to update, proceed to next field

@@ -19,7 +19,6 @@ import edu.kit.datamanager.auth.domain.OEntity;
 import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
 /**
@@ -30,9 +29,7 @@ import org.springframework.stereotype.Service;
 public class PatchSecurityService{
 
   public boolean canUpdate(Object obj){
-
     List<GrantedAuthority> authorities = (List<GrantedAuthority>) SecurityContextHolder.getContext().getAuthentication().getAuthorities();
-
     if(obj instanceof OEntity){
       OEntity oEntity = (OEntity) obj;
       return oEntity.canUpdate(authorities);

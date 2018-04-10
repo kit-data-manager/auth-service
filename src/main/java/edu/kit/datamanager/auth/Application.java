@@ -15,10 +15,6 @@
  */
 package edu.kit.datamanager.auth;
 
-import edu.kit.datamanager.auth.service.INoteService;
-import edu.kit.datamanager.auth.service.UserRepositoryImpl;
-import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
-import edu.kit.datamanager.auth.service.impl.NoteService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -47,16 +43,6 @@ public class Application{
   public Logger logger(InjectionPoint injectionPoint){
     Class<?> targetClass = injectionPoint.getMember().getDeclaringClass();
     return LoggerFactory.getLogger(targetClass.getCanonicalName());
-  }
-
-  @Bean
-  public CustomUserDetailsService customUserDetailsService(){
-    return new CustomUserDetailsService();
-  }
-
-  @Bean
-  public INoteService noteService(){
-    return new NoteService();
   }
 
   @Bean

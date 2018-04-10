@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Set;
 import static java.util.stream.Collectors.toList;
 import org.apache.commons.lang3.time.DateUtils;
+import org.slf4j.Logger;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -47,14 +48,17 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  */
 public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMapper{
 
+  private Logger LOGGER;
+
   private final String secretKey;
-  private final CustomUserDetailsService userDetailsService;
+  private final IUserService userDetailsService;
   private final BCryptPasswordEncoder passwordEncoder;
 
-  public JwtAuthenticationProvider(String secretKey, CustomUserDetailsService userDetailsService, BCryptPasswordEncoder passwordEncoder){
+  public JwtAuthenticationProvider(String secretKey, IUserService userDetailsService, BCryptPasswordEncoder passwordEncoder, Logger logger){
     this.secretKey = secretKey;
     this.userDetailsService = userDetailsService;
     this.passwordEncoder = passwordEncoder;
+    this.LOGGER = logger;
   }
 
   @Override
@@ -83,10 +87,10 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
     user.setActiveGroup(groupId);
     String token = Jwts.builder().setPayload(mapper.writeValueAsString(user)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
     Set<String> roleStrings = new HashSet<>();
-    user.getRoles().forEach((r) -> {
-      roleStrings.add(r);
+    user.getRolesAsEnum().forEach((r) -> {
+      roleStrings.add(r.toString());
     });
-    return new JwtAuthenticationToken(grantedAuthorities(roleStrings), Long.toString(user.getId()), user.getIdentifier(), token);
+    return new JwtAuthenticationToken(grantedAuthorities(roleStrings), Long.toString(user.getId()), user.getUsername(), token);
   }
 
   @SuppressWarnings("unchecked")
@@ -94,11 +98,11 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
     Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
 
     List<SimpleGrantedAuthority> grantedAuthorities = grantedAuthorities((Set<String>) new HashSet<>((Collection<String>) claimsJws.getBody().get("roles")));
-    String identifier = claimsJws.getBody().get("identifier", String.class);
+    String username = claimsJws.getBody().get("username", String.class);
     JwtAuthenticationToken jwtToken = new JwtAuthenticationToken(
             grantedAuthorities,
-            identifier,
-            identifier,
+            username,
+            username,
             token);
     jwtToken.setGroupId(claimsJws.getBody().get("activeGroup", String.class));
     return jwtToken;
@@ -109,36 +113,29 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
   }
 
   private RepoUser getUser(Authentication authentication) throws IOException{
-    System.out.println("READ");
     RepoUser theUser = (RepoUser) userDetailsService.loadUserByUsername(authentication.getName());
-    System.out.println("USER " + theUser);
-    //check if this is needed....
-    if(theUser.isEnabled()){
-      System.out.println("DENO");
+    if(!theUser.isEnabled()){
+      LOGGER.warn("User " + theUser.getUsername() + " is disabled. Falling back to anonymous access.");
       throw new InvalidAuthenticationException("Access denied");
     }
     String password = theUser.getPassword();
     String providedPassword = (String) authentication.getCredentials();
-    System.out.println("COMPARE " + passwordEncoder.matches(providedPassword, password));
     if(providedPassword == null || !passwordEncoder.matches(providedPassword, password)){
-      System.out.println("NULL?");
       if(theUser.isEnabled()){
-        System.out.println("ENA");
         theUser.setLoginFailures(Math.min(3, theUser.getLoginFailures() + 1));
         if(theUser.getLoginFailures() == 3){
           theUser.setLocked(true);
           theUser.setLockedUntil(DateUtils.addHours(new Date(), 1));
-          System.out.println("UPDA");
           userDetailsService.update(theUser);
-          System.out.println("DONE");
         }
+        LOGGER.warn("Wrong password provided for user " + theUser.getUsername() + " (Attempt: " + theUser.getLoginFailures() + ")");
+      } else{
+        LOGGER.warn("Login attempt for disabled user " + theUser.getUsername() + ".");
       }
-      System.out.println("DENI");
       throw new InvalidAuthenticationException("Access denied");
     }
-    System.out.println("ERA");
+    LOGGER.debug("Successful login for user " + theUser.getUsername() + ".");
     theUser.erasePassword();
-    System.out.println("RETUR");
     return theUser;
   }
 }

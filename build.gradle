@@ -57,7 +57,7 @@ dependencies {
 
    compile("org.postgresql:postgresql:42.2.1")
    
-
+   testCompile("com.h2database:h2:1.4.194")
    testCompile("org.springframework.restdocs:spring-restdocs-mockmvc")
    testCompile("org.springframework.boot:spring-boot-starter-test")
    testCompile("org.springframework:spring-test")

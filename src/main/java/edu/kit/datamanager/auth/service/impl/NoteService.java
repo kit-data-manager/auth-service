@@ -39,69 +39,69 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * @author jejkal
  */
-@Service
-@Transactional
-public class NoteService implements INoteService{
+//@Service
+//@Transactional
+public class NoteService {//implements INoteService{
 
-  @Autowired
-  private INoteDao dao;
-
-  @PersistenceContext
-  private EntityManager em;
-
-  public NoteService(){
-    super();
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission){
-    return ((INoteDao) getDao()).findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, permission);
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public Page<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl){
-    return ((INoteDao) getDao()).findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, permission, pgbl);
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission){
-    Optional<Note> theNote = ((INoteDao) getDao()).findById(noteId);
-    //TODO: check permission
-    return theNote.get();
-  }
-
-  @Override
-  @Transactional(readOnly = true)
-  public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl){
-    Specification<Note> spec = Specification.where(PermissionSpecification.toSpecification(sids, permission)).and(new ByExampleSpecification(em).byExample(example));
-    return ((INoteDao) getDao()).findAll(spec, pgbl);
-  }
-
-  @Override
-  public Note create(final Note entity){
-    return getDao().save(entity);
-  }
-
-  @Override
-  public Note update(final Note entity){
-    return getDao().save(entity);
-  }
-
-  @Override
-  public void delete(final Note entity){
-    getDao().delete(entity);
-  }
-
-  protected PagingAndSortingRepository<Note, Long> getDao(){
-    return dao;
-  }
-
-  @Override
-  public Health health(){
-    return Health.up()
-            .withDetail("Notes", dao.count()).build();
-  }
+//  @Autowired
+//  private INoteDao dao;
+//
+//  @PersistenceContext
+//  private EntityManager em;
+//
+//  public NoteService(){
+//    super();
+//  }
+//
+//  @Override
+//  @Transactional(readOnly = true)
+//  public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission){
+//    return ((INoteDao) getDao()).findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, permission);
+//  }
+//
+//  @Override
+//  @Transactional(readOnly = true)
+//  public Page<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl){
+//    return ((INoteDao) getDao()).findByAclsSidInAndAclsPermissionGreaterThanEqual(sids, permission, pgbl);
+//  }
+//
+//  @Override
+//  @Transactional(readOnly = true)
+//  public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission){
+//    Optional<Note> theNote = ((INoteDao) getDao()).findById(noteId);
+//    //TODO: check permission
+//    return theNote.get();
+//  }
+//
+//  @Override
+//  @Transactional(readOnly = true)
+//  public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl){
+//    Specification<Note> spec = Specification.where(PermissionSpecification.toSpecification(sids, permission)).and(new ByExampleSpecification(em).byExample(example));
+//    return ((INoteDao) getDao()).findAll(spec, pgbl);
+//  }
+//
+//  @Override
+//  public Note create(final Note entity){
+//    return getDao().save(entity);
+//  }
+//
+//  @Override
+//  public Note update(final Note entity){
+//    return getDao().save(entity);
+//  }
+//
+//  @Override
+//  public void delete(final Note entity){
+//    getDao().delete(entity);
+//  }
+//
+//  protected PagingAndSortingRepository<Note, Long> getDao(){
+//    return dao;
+//  }
+//
+//  @Override
+//  public Health health(){
+//    return Health.up()
+//            .withDetail("Notes", dao.count()).build();
+//  }
 }

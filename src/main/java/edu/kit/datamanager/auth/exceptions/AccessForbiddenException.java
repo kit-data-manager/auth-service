@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.dao;
+package edu.kit.datamanager.auth.exceptions;
 
-import edu.kit.datamanager.auth.domain.RepoUser;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  *
  * @author jejkal
  */
-public interface IUserDao extends JpaRepository<RepoUser, Long>, JpaSpecificationExecutor<RepoUser>{
+@ResponseStatus(value = HttpStatus.FORBIDDEN)
+public class AccessForbiddenException extends RuntimeException{
 
-  public RepoUser findByUsername(String username);
+  public AccessForbiddenException(){
+    super();
+  }
 
-  @Override
-  @PreAuthorize("@patchSecurityService.canUpdate(#s)")
-  public <S extends RepoUser> S save(S s);
+  public AccessForbiddenException(String message){
+    super(message);
+  }
 
 }

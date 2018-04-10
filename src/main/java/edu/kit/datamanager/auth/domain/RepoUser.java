@@ -17,9 +17,14 @@ package edu.kit.datamanager.auth.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.Constants;
+import edu.kit.datamanager.auth.exceptions.CustomInternalServerError;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,13 +33,22 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PostLoad;
+import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+import lombok.AccessLevel;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  *
@@ -47,11 +61,38 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = false)
 public class RepoUser extends OEntity<RepoUser> implements UserDetails{
 
+  @Autowired
+  @Getter(AccessLevel.NONE)
+  @Setter(AccessLevel.NONE)
+  @Transient
+  private Logger LOGGER;
+
   public enum UserRole{
-    CURATOR,
-    ADMINISTRATOR,
-    USER,
-    GUEST;
+    CURATOR("ROLE_CURATOR"),
+    ADMINISTRATOR("ROLE_ADMINISTRATOR"),
+    USER("ROLE_USER"),
+    GUEST("ROLE_GUEST"),
+    INACTIVE("ROLE_INACTIVE");
+
+    private final String value;
+
+    UserRole(String role){
+      this.value = role;
+    }
+
+    @Override
+    public String toString(){
+      return value;
+    }
+
+    public static UserRole fromValue(String value){
+      for(UserRole uRole : values()){
+        if(uRole.value.equals(value)){
+          return uRole;
+        }
+      }
+      throw new IllegalArgumentException("Value argument '" + value + " has no matching UserRole.");
+    }
   }
 
   private static RepoUser SYSTEM = null;
@@ -66,7 +107,6 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
   private String username;
   private String email;
   private String activeGroup;
-  @JsonIgnore
   private String password;
   private String orcid;
   //special/internal properties that cannot be changed by the user
@@ -87,15 +127,17 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
   @ApiModelProperty(hidden = true)
   @JsonIgnore
   private boolean locked;
+  @Transient
+  private transient Collection<UserRole> rolesAsEnum = new ArrayList<>();
   @SecureUpdate({"ADMINISTRATOR"})
-  private ArrayList<String> roles;
+  private String roles;
 
   public static final synchronized RepoUser getSystemUser(){
     if(SYSTEM == null){
       SYSTEM = new RepoUser();
       SYSTEM.setIdentifier(Constants.SYSTEM_USER_ID);
       SYSTEM.setUsername("System");
-      SYSTEM.setRoles(new ArrayList<>(Arrays.asList(UserRole.ADMINISTRATOR.toString(), UserRole.USER.toString(), UserRole.GUEST.toString(), UserRole.CURATOR.toString())));
+      SYSTEM.setRolesAsEnum(Arrays.asList(UserRole.ADMINISTRATOR, UserRole.USER, UserRole.GUEST, UserRole.CURATOR));
     }
     return SYSTEM;
   }
@@ -105,7 +147,7 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
       ANONYMOUS = new RepoUser();
       ANONYMOUS.setIdentifier(Constants.ANONYMOUS_USER_ID);
       ANONYMOUS.setUsername("Anonymous");
-      ANONYMOUS.setRoles(new ArrayList<>(Arrays.asList(UserRole.GUEST.toString())));
+      ANONYMOUS.setRolesAsEnum(Arrays.asList(UserRole.GUEST));
     }
     return ANONYMOUS;
   }
@@ -116,7 +158,7 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
 
   public RepoUser(){
     super();
-    setRoles(new ArrayList<>(Arrays.asList(UserRole.USER.toString())));
+    setRolesAsEnum(Arrays.asList(UserRole.USER));
   }
 
   public void erasePassword(){
@@ -127,9 +169,9 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
   @JsonIgnore
   public Collection<? extends GrantedAuthority> getAuthorities(){
     Collection<GrantedAuthority> auths = new ArrayList<>();
-    for(String role : roles){
-      auths.add(new SimpleGrantedAuthority(role));
-    }
+    getRolesAsEnum().forEach((role) -> {
+      auths.add(new SimpleGrantedAuthority(role.toString()));
+    });
     return auths;
   }
 
@@ -151,9 +193,50 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
     return true;
   }
 
+  @PostLoad
+  public void convertRolesToEnum(){
+    if(roles != null){
+      try{
+        ObjectMapper mapper = new ObjectMapper();
+        final JsonNode jsonNode = mapper.readTree(roles);
+        rolesAsEnum = new ArrayList<>();
+        if(jsonNode.isArray()){
+          for(JsonNode node : jsonNode){
+            String role = node.asText();
+            UserRole r = UserRole.fromValue(role);
+            rolesAsEnum.add(r);
+          }
+        }
+      } catch(IOException | IllegalArgumentException ex){
+        LOGGER.error("Failed to read user roles from " + this, ex);
+        throw new CustomInternalServerError("Failed to read user roles.");
+      }
+    }
+  }
+
+  @PrePersist
+  @PreUpdate
+  public void convertEnumToRoles(){
+    String[] values = new String[rolesAsEnum.size()];
+
+    int cnt = 0;
+    for(UserRole role : rolesAsEnum){
+      values[cnt] = role.value;
+      cnt++;
+    }
+
+    try{
+      ObjectMapper mapper = new ObjectMapper();
+      roles = mapper.writeValueAsString(values);
+    } catch(JsonProcessingException ex){
+      LOGGER.error("Failed to write user roles from " + this, ex);
+      throw new CustomInternalServerError("Failed to write user roles.");
+    }
+  }
+
   @Override
   @JsonIgnore
   public boolean isEnabled(){
-    return isAccountNonExpired() && isAccountNonLocked() && !isCredentialsNonExpired();
+    return isAccountNonExpired() && isAccountNonLocked() && isCredentialsNonExpired();
   }
 }

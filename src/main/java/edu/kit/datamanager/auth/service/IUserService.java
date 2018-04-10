@@ -20,12 +20,13 @@ import java.util.Optional;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
  *
  * @author jejkal
  */
-public interface IUserService extends HealthIndicator{
+public interface IUserService extends HealthIndicator, UserDetailsService{
 
   public Page<RepoUser> findAll(RepoUser example, Pageable pgbl);
 

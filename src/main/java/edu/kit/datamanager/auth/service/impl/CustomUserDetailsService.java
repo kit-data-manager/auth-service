@@ -19,6 +19,7 @@ import edu.kit.datamanager.auth.dao.ByExampleSpecification;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.service.IUserService;
+import java.util.Arrays;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -27,7 +28,6 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
-public class CustomUserDetailsService implements UserDetailsService, IUserService{
+public class CustomUserDetailsService implements IUserService{
 
   @Autowired
   private IUserDao dao;
@@ -56,7 +56,14 @@ public class CustomUserDetailsService implements UserDetailsService, IUserServic
   @Override
   @Transactional(readOnly = true)
   public RepoUser loadUserByUsername(String name){
-    return getDao().findByUsername(name);
+    RepoUser user = getDao().findByUsername(name);
+    if(user == null){
+      return null;
+    }
+    if(!user.isEnabled()){
+      user.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.INACTIVE));
+    }
+    return user;
   }
 
   @Override
@@ -79,7 +86,10 @@ public class CustomUserDetailsService implements UserDetailsService, IUserServic
   @Override
   public RepoUser create(RepoUser entity){
     entity.setPassword(passwordEncoder.encode(entity.getPassword()));
-    return getDao().save(entity);
+    System.out.println("ID " + entity.getId());
+    RepoUser result = getDao().save(entity);
+    System.out.println("RESULT " + result);
+    return result;
   }
 
   @Override

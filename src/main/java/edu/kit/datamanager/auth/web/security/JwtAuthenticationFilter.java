@@ -16,7 +16,6 @@
 package edu.kit.datamanager.auth.web.security;
 
 import java.io.IOException;
-import java.util.Enumeration;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -46,10 +45,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{//extends User
 
     if(authToken == null || !authToken.startsWith(BEARER_TOKEN_IDENTIFIER)){
       chain.doFilter(request, response);
-      return;
+    } else{
+      Authentication authentication = authenticationManager.authenticate(new JwtAuthenticationToken(authToken.substring(BEARER_TOKEN_IDENTIFIER.length())));
+      SecurityContextHolder.getContext().setAuthentication(authentication);
+      chain.doFilter(request, response);
     }
-    Authentication authentication = authenticationManager.authenticate(new JwtAuthenticationToken(authToken.substring(BEARER_TOKEN_IDENTIFIER.length())));
-    SecurityContextHolder.getContext().setAuthentication(authentication);
-    chain.doFilter(request, response);
   }
 }
