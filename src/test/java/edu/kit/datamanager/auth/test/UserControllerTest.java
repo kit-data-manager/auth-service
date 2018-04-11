@@ -21,7 +21,10 @@ import edu.kit.datamanager.auth.domain.RepoUser;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -110,7 +113,6 @@ public class UserControllerTest{
     inactive.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
     inactive.setEmail("test@mail.org");
     inactiveUser = userDao.saveAndFlush(inactive);
-    System.out.println("INAVN " + inactiveUser);
   }
 
   @Test
@@ -120,9 +122,24 @@ public class UserControllerTest{
   }
 
   @Test
+  public void testGetUserListByExampleAsAdmin() throws Exception{
+    RepoUser example = new RepoUser();
+    example.setUsername("user");
+    ObjectMapper mapper = new ObjectMapper();
+    this.mockMvc.perform(post("/api/v1/users/search").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(example)).param("page", "0").param("size", "10").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].username").value("user")).andExpect(MockMvcResultMatchers.jsonPath("$[1]").doesNotExist());
+  }
+
+  @Test
   public void testGetUserListWithExceededPageSize() throws Exception{
     this.mockMvc.perform(get("/api/v1/users/").param("page", "0").param("size", "1000").header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].username").value("admin"));
+  }
+
+  @Test
+  public void testGetUserListWithExceededPageNumber() throws Exception{
+    this.mockMvc.perform(get("/api/v1/users/").param("page", "100").param("size", "100").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0]").doesNotExist());
   }
 
   @Test
@@ -144,7 +161,7 @@ public class UserControllerTest{
 
   @Test
   public void testGetAdminUserByAdmin() throws Exception{
-    this.mockMvc.perform(get("/api/v1/users/1").header(HttpHeaders.AUTHORIZATION,
+    this.mockMvc.perform(get("/api/v1/users/" + adminUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("admin"));
   }
 
@@ -178,6 +195,97 @@ public class UserControllerTest{
   }
 
   @Test
+  public void testGetMeAsAnonymous() throws Exception{
+    this.mockMvc.perform(get("/api/v1/users/me")).andDo(print()).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void testPatchAsAnonymous() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/identifier\",\"value\": \"test1\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/" + adminUser.getId()).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void testPatchOfUnknownUser() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/identifier\",\"value\": \"test1\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/0").contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void testPatchForbiddenField() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/identifier\",\"value\": \"invalid\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/" + adminUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  public void testPatchOtherUserWithoutAdminRole() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/email\",\"value\": \"changed\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  public void testPatchUsernameWithoutAdminRole() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/" + defaultUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  public void testPatchUsernameAsAdmin() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isNoContent());
+
+    this.mockMvc.perform(get("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("changed"));
+  }
+
+  @Test
+  public void testPatchUsernameAsUser() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/" + defaultUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+
+    this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("user"));
+  }
+
+  @Test
+  public void testApplyInvalidPatch() throws Exception{
+    String patch = "[{\"op\": \"replace\",\"path\": \"/unknownProperty\",\"value\": \"changed\"}]";
+    this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isUnprocessableEntity());
+  }
+
+  @Test
+  public void testDeleteUserWithoutAdminRole() throws Exception{
+    this.mockMvc.perform(delete("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+  }
+
+  @Test
+  public void testDeleteUserAsAdminRole() throws Exception{
+    this.mockMvc.perform(delete("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isNoContent());
+    this.mockMvc.perform(get("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.active").value("false"));
+  }
+
+  @Test
+  public void testDeleteInvalidUserAsAdminRole() throws Exception{
+    this.mockMvc.perform(delete("/api/v1/users/0").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isNoContent());
+  }
+
+  @Test
+  public void testDeleteAsAnonymous() throws Exception{
+    this.mockMvc.perform(delete("/api/v1/users/" + inactiveUser.getId())).andDo(print()).andExpect(status().isUnauthorized());
+  }
+
+  @Test
   public void testRegisterUser() throws Exception{
     RepoUser created = new RepoUser();
     created.setUsername("created");
@@ -185,9 +293,23 @@ public class UserControllerTest{
     created.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
     created.setEmail("test@mail.org");
     ObjectMapper mapper = new ObjectMapper();
-    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isCreated());//.andExpect(MockMvcResultMatchers.jsonPath("$.username").value("created"));
+    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isCreated());
     this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("created:created".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("created"));
+  }
+
+  @Test
+  public void testRegisterUserWithIdentifier() throws Exception{
+    RepoUser created = new RepoUser();
+    created.setUsername("created_with_id");
+    created.setIdentifier("created_id_1");
+    created.setPassword("created_with_id");
+    created.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    created.setEmail("test@mail.org");
+    ObjectMapper mapper = new ObjectMapper();
+    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isCreated());
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("created_with_id:created_with_id".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.identifier").value("created_id_1"));
   }
 
   @Test

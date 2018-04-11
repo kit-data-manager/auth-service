@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.dao;
+package edu.kit.datamanager.auth.domain;
 
-import edu.kit.datamanager.auth.domain.RepoUser;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.security.access.prepost.PreAuthorize;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author jejkal
  */
-public interface IUserDao extends JpaRepository<RepoUser, Long>, JpaSpecificationExecutor<RepoUser>{
-
-  public RepoUser findByUsername(String username);
-
-  @Override
- // @PreAuthorize("@patchSecurityService.canUpdate(#s)")
-  public <S extends RepoUser> S save(S s);
-
+@Documented
+@Target(ElementType.FIELD)
+@Retention(RUNTIME)
+public @interface Searchable{
 }

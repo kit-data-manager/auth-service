@@ -59,7 +59,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @EqualsAndHashCode(callSuper = false)
-public class RepoUser extends OEntity<RepoUser> implements UserDetails{
+public class RepoUser implements UserDetails{
 
   @Autowired
   @Getter(AccessLevel.NONE)
@@ -101,35 +101,37 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @SecureUpdate({"FORBIDDEN"})
+  @Searchable
   private Long id;
   @SecureUpdate({"FORBIDDEN"})
+  @Searchable
   private String identifier;
+  @Searchable
+  @SecureUpdate({"ROLE_ADMINISTRATOR"})
   private String username;
+  @Searchable
   private String email;
   private String activeGroup;
   private String password;
+  @Searchable
   private String orcid;
   //special/internal properties that cannot be changed by the user
-  @SecureUpdate({"ADMINISTRATOR"})
+  @SecureUpdate({"ROLE_ADMINISTRATOR"})
   @ApiModelProperty(hidden = true)
-  @JsonIgnore
-  private int loginFailures = 0;
+  private Integer loginFailures = 0;
   @Temporal(TemporalType.TIMESTAMP)
-  @SecureUpdate({"ADMINISTRATOR"})
+  @SecureUpdate({"ROLE_ADMINISTRATOR"})
   @ApiModelProperty(hidden = true)
-  @JsonIgnore
   private Date lockedUntil = null;
-  @SecureUpdate({"ADMINISTRATOR"})
+  @SecureUpdate({"ROLE_ADMINISTRATOR"})
   @ApiModelProperty(hidden = true)
-  @JsonIgnore
-  private boolean active;
-  @SecureUpdate({"ADMINISTRATOR"})
+  private Boolean active;
+  @SecureUpdate({"ROLE_ADMINISTRATOR"})
   @ApiModelProperty(hidden = true)
-  @JsonIgnore
-  private boolean locked;
+  private Boolean locked;
   @Transient
   private transient Collection<UserRole> rolesAsEnum = new ArrayList<>();
-  @SecureUpdate({"ADMINISTRATOR"})
+  @SecureUpdate({"ROLE_ADMINISTRATOR"})
   private String roles;
 
   public static final synchronized RepoUser getSystemUser(){
@@ -178,13 +180,13 @@ public class RepoUser extends OEntity<RepoUser> implements UserDetails{
   @Override
   @JsonIgnore
   public boolean isAccountNonExpired(){
-    return isActive();
+    return getActive();
   }
 
   @Override
   @JsonIgnore
   public boolean isAccountNonLocked(){
-    return !isLocked();
+    return !getLocked();
   }
 
   @Override

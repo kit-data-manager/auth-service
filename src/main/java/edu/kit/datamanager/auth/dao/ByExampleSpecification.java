@@ -15,6 +15,8 @@
  */
 package edu.kit.datamanager.auth.dao;
 
+import edu.kit.datamanager.auth.domain.Searchable;
+import io.micrometer.core.instrument.search.Search;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
@@ -79,33 +81,42 @@ public class ByExampleSpecification{
 
         try{
           Member javaMember = attr.getJavaMember();
-          if(attr.getJavaType() == String.class){
-            String fieldValue;
-            if(javaMember instanceof Field){
-              fieldValue = (String) ((Field) javaMember).get(example);
-            } else{
-              fieldValue = (String) ReflectionUtils.invokeMethod((Method) javaMember, example);
-            }
-
-            if(isNotEmpty(fieldValue)){
-              // please compiler
-              SingularAttribute<T, String> stringAttr = em.getMetamodel().entity(type).getDeclaredSingularAttribute(fieldName, String.class);
-              // apply like
-              predicates.add(builder.like(root.get(stringAttr), pattern(fieldValue)));
-            }
+          boolean searchableField;
+          if(javaMember instanceof Field){
+            searchableField = ((Field) javaMember).getAnnotation(Searchable.class) != null;
           } else{
-            Object fieldValue;
-            if(javaMember instanceof Field){
-              fieldValue = ((Field) javaMember).get(example);
-            } else{
-              fieldValue = (String) ReflectionUtils.invokeMethod((Method) javaMember, example);
-            }
+            searchableField = ((Method) javaMember).getAnnotation(Searchable.class) != null;
+          }
 
-            if(fieldValue != null){
-              // please compiler
-              SingularAttribute<T, ?> anyAttr = em.getMetamodel().entity(type).getDeclaredSingularAttribute(fieldName, fieldValue.getClass());
-              //  apply equal
-              predicates.add(builder.equal(root.get(anyAttr), fieldValue));
+          if(searchableField){
+            if(attr.getJavaType() == String.class){
+              String fieldValue;
+              if(javaMember instanceof Field){
+                fieldValue = (String) ((Field) javaMember).get(example);
+              } else{
+                fieldValue = (String) ReflectionUtils.invokeMethod((Method) javaMember, example);
+              }
+
+              if(isNotEmpty(fieldValue)){
+                // please compiler
+                SingularAttribute<T, String> stringAttr = em.getMetamodel().entity(type).getDeclaredSingularAttribute(fieldName, String.class);
+                // apply like
+                predicates.add(builder.like(root.get(stringAttr), pattern(fieldValue)));
+              }
+            } else{
+              Object fieldValue;
+              if(javaMember instanceof Field){
+                fieldValue = ((Field) javaMember).get(example);
+              } else{
+                fieldValue = (String) ReflectionUtils.invokeMethod((Method) javaMember, example);
+              }
+
+              if(fieldValue != null){
+                // please compiler
+                SingularAttribute<T, ?> anyAttr = em.getMetamodel().entity(type).getDeclaredSingularAttribute(fieldName, fieldValue.getClass());
+                //  apply equal
+                predicates.add(builder.equal(root.get(anyAttr), fieldValue));
+              }
             }
           }
         } catch(IllegalAccessException | IllegalArgumentException e){

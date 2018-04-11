@@ -59,13 +59,13 @@ public class GroupController extends GenericResourceController<Group>{
   }
 
   @Override
-  public ResponseEntity<Group> findById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity<Group> getById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response){
     System.out.println("BYID");
     return null;
   }
 
   @Override
-  public ResponseEntity<Resources<Group>> findByExample(Group example, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<Group>> findByExample(Group example, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     System.out.println("EXAMPLE");
     return null;
   }

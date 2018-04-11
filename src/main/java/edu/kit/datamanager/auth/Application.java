@@ -15,6 +15,8 @@
  */
 package edu.kit.datamanager.auth;
 
+import edu.kit.datamanager.auth.service.IUserService;
+import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -70,6 +72,10 @@ public class Application{
     return new BCryptPasswordEncoder();
   }
 
+  @Bean
+  public IUserService customUserDetailsService(){
+    return new CustomUserDetailsService();
+  }
 //  @Bean
 //  public Queue myQueue(){
 //    return new Queue("myqueue");
@@ -78,6 +84,7 @@ public class Application{
 //  public Filter shallowETagHeaderFilter(){
 //    return new ShallowEtagHeaderFilter();
 //  }
+
   public static void main(String[] args){
     ApplicationContext ctx = SpringApplication.run(Application.class, args);
     /*  String[] beanNames = ctx.getBeanDefinitionNames();
