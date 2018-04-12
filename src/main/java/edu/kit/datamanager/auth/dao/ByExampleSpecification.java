@@ -15,7 +15,7 @@
  */
 package edu.kit.datamanager.auth.dao;
 
-import edu.kit.datamanager.auth.domain.Searchable;
+import edu.kit.datamanager.auth.annotations.Searchable;
 import io.micrometer.core.instrument.search.Search;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;

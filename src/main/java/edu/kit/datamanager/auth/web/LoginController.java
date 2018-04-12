@@ -15,27 +15,18 @@
  */
 package edu.kit.datamanager.auth.web;
 
-import edu.kit.datamanager.auth.domain.RepoUser;
-import edu.kit.datamanager.auth.exceptions.UnauthorizedAccessException;
-import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.auth.web.security.JwtAuthenticationToken;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
-import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.WebRequest;
 
 /**
  *
@@ -62,8 +53,8 @@ public class LoginController{
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "Login successful")})
   @PostMapping("/api/v1/login")
-  public String login(@RequestParam("groupId") String groupId, Authentication authentication){
-    JwtAuthenticationToken token = ((JwtAuthenticationToken) authentication);
+  public String login(@RequestParam(name = "groupId", required = false) String groupId){
+    JwtAuthenticationToken token = ((JwtAuthenticationToken) AuthenticationHelper.getAuthentication());
     LOGGER.debug("Successfully logged in as user {}.", token.getUserId());
     return token.getToken();
   }

@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.domain;
+package edu.kit.datamanager.auth.dao;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-import java.lang.annotation.Target;
+import edu.kit.datamanager.auth.domain.RepoUserGroup;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
  *
  * @author jejkal
  */
-@Documented
-@Target(ElementType.FIELD)
-@Retention(RUNTIME)
-public @interface Searchable{
+public interface IGroupDao extends JpaRepository<RepoUserGroup, Long>, JpaSpecificationExecutor<RepoUserGroup>{
+
 }

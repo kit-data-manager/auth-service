@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.domain;
+package edu.kit.datamanager.auth.exceptions;
 
-import java.util.HashSet;
-import java.util.Set;
-import lombok.Data;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  *
  * @author jejkal
  */
-@Data
-public class DataEntry{
+@ResponseStatus(value = HttpStatus.PRECONDITION_REQUIRED)
+public class EtagMissingException extends RuntimeException{
 
-  private String path;
-  private String name;
-  private Set<DataEntryMetadataElement> metadata = new HashSet<>();
+  public EtagMissingException(){
+    super();
+  }
+
+  public EtagMissingException(String message){
+    super(message);
+  }
 
 }

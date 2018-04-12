@@ -22,7 +22,6 @@ import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
 import com.github.fge.jsonpatch.diff.JsonDiff;
 import edu.kit.datamanager.auth.domain.AclEntry;
-import edu.kit.datamanager.auth.domain.DataEntry;
 import edu.kit.datamanager.auth.domain.Note;
 import edu.kit.datamanager.auth.service.INoteService;
 import java.io.File;

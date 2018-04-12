@@ -18,7 +18,6 @@ package edu.kit.datamanager.auth.dao;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  *
@@ -27,9 +26,5 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public interface IUserDao extends JpaRepository<RepoUser, Long>, JpaSpecificationExecutor<RepoUser>{
 
   public RepoUser findByUsername(String username);
-
-  @Override
- // @PreAuthorize("@patchSecurityService.canUpdate(#s)")
-  public <S extends RepoUser> S save(S s);
 
 }

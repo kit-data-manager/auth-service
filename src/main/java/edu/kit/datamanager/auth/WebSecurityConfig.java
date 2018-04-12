@@ -21,6 +21,7 @@ import edu.kit.datamanager.auth.web.security.JwtAuthenticationProvider;
 import edu.kit.datamanager.auth.web.security.NoopAuthenticationEventPublisher;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -44,8 +45,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
   @Autowired
   private Logger logger;
 
-  // @Value("${secret.key}")
-  private String secretKey = "test";
+  @Value("${secret.key}")
+  private String secretKey;
 
   @Autowired
   private IUserService userDetailsService;
@@ -74,8 +75,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
     http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .csrf().disable()
-            .addFilterBefore(new JwtAuthenticationFilter(authenticationManager()), AbstractPreAuthenticatedProcessingFilter.class)
-            .addFilterBefore(new BasicAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class).
+            .addFilterBefore(new BasicAuthenticationFilter(authenticationManager()), AbstractPreAuthenticatedProcessingFilter.class)
+            .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class).
             authorizeRequests().
             antMatchers("/api/v1/login").permitAll().
             antMatchers("/swagger-ui.html").permitAll().

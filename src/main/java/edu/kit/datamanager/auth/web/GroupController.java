@@ -16,11 +16,10 @@
 package edu.kit.datamanager.auth.web;
 
 import com.github.fge.jsonpatch.JsonPatch;
-import edu.kit.datamanager.auth.domain.Group;
+import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import io.swagger.annotations.Api;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Pageable;
-import org.springframework.hateoas.Resources;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +29,8 @@ import org.springframework.web.context.request.WebRequest;
 import edu.kit.datamanager.controller.GenericResourceController;
 import java.util.List;
 import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -39,46 +40,44 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Controller
 @RequestMapping(value = "/api/v1/groups")
 @Api(value = "Group Management")
-public class GroupController extends GenericResourceController<Group>{
+public class GroupController extends GenericResourceController<RepoUserGroup>{
 
+  @Autowired
   private Logger LOGGER;
 
-  public GroupController(){
-    super();
-  }
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
 
   @Override
-  public ResponseEntity<Group> create(@RequestBody Group group, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity<RepoUserGroup> create(@RequestBody RepoUserGroup group, WebRequest request, final HttpServletResponse response){
     return null;
   }
 
   @Override
-  public ResponseEntity<List<Group>> findAll(Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUserGroup>> findAll(Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     System.out.println("HERE");
     return null;
   }
 
   @Override
-  public ResponseEntity<Group> getById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity<RepoUserGroup> getById(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response){
     System.out.println("BYID");
     return null;
   }
 
   @Override
-  public ResponseEntity<List<Group>> findByExample(Group example, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUserGroup>> findByExample(@RequestBody RepoUserGroup example, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     System.out.println("EXAMPLE");
     return null;
   }
 
   @Override
-  public ResponseEntity patch(@PathVariable("id")
-          final Long id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity patch(@PathVariable("id") final Long id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response){
     return null;
   }
 
   @Override
-  public ResponseEntity delete(@PathVariable("id")
-          final Long id, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity delete(@PathVariable("id") final Long id, WebRequest request, final HttpServletResponse response){
     return null;
   }
 

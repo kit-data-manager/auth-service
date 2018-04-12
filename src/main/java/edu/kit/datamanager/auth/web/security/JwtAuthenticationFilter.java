@@ -31,7 +31,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 public class JwtAuthenticationFilter extends OncePerRequestFilter{//extends UsernamePasswordAuthenticationFilter{
 
-  private final String AUTHENTICATION_HEADER = "Authentication";
+  private final String AUTHORIZATION_HEADER = "Authorization";
   private final String BEARER_TOKEN_IDENTIFIER = "Bearer ";
   private final AuthenticationManager authenticationManager;
 
@@ -41,8 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{//extends User
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException{
-    String authToken = request.getHeader(AUTHENTICATION_HEADER);
-
+    String authToken = request.getHeader(AUTHORIZATION_HEADER);
     if(authToken == null || !authToken.startsWith(BEARER_TOKEN_IDENTIFIER)){
       chain.doFilter(request, response);
     } else{

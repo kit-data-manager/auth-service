@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.domain;
+package edu.kit.datamanager.auth.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -28,7 +28,5 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.FIELD)
 @Retention(RUNTIME)
-public @interface SecureUpdate{
-
-  String[] value();
+public @interface Searchable{
 }

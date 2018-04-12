@@ -16,7 +16,10 @@
 package edu.kit.datamanager.auth.web.security;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.auth.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
 import edu.kit.datamanager.auth.util.JsonMapper;
@@ -25,6 +28,7 @@ import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -90,14 +94,36 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
     user.getRolesAsEnum().forEach((r) -> {
       roleStrings.add(r.toString());
     });
-    return new JwtAuthenticationToken(grantedAuthorities(roleStrings), Long.toString(user.getId()), user.getUsername(), token);
+    JwtAuthenticationToken result = new JwtAuthenticationToken(grantedAuthorities(roleStrings), Long.toString(user.getId()), user.getUsername(), token);
+    return result;
   }
 
   @SuppressWarnings("unchecked")
   private Authentication getJwtAuthentication(String token){
     Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
+    List<String> rolesList = new ArrayList<>();
+    String roleClaim = claimsJws.getBody().get("roles", String.class);
+    if(roleClaim == null){
+      LOGGER.error("No 'roles' claim found in JWT " + claimsJws);
+      throw new CustomInternalServerError("Unprocessable authentication token.");
+    }
 
-    List<SimpleGrantedAuthority> grantedAuthorities = grantedAuthorities((Set<String>) new HashSet<>((Collection<String>) claimsJws.getBody().get("roles")));
+    try{
+      final JsonNode jsonNode = new ObjectMapper().readTree(roleClaim);
+      if(jsonNode.isArray()){
+        for(JsonNode node : jsonNode){
+          String role = node.asText();
+          rolesList.add(role);
+        }
+      } else{
+        throw new IllegalArgumentException("Roles claim '" + roleClaim + "' seems to be no JSON array.");
+      }
+    } catch(IOException | IllegalArgumentException ex){
+      LOGGER.error("Failed to read user roles from " + this, ex);
+      throw new CustomInternalServerError("Failed to read user roles.");
+    }
+
+    List<SimpleGrantedAuthority> grantedAuthorities = grantedAuthorities((Set<String>) new HashSet<>(rolesList));
     String username = claimsJws.getBody().get("username", String.class);
     JwtAuthenticationToken jwtToken = new JwtAuthenticationToken(
             grantedAuthorities,
@@ -135,7 +161,6 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
       throw new InvalidAuthenticationException("Access denied");
     }
     LOGGER.debug("Successful login for user " + theUser.getUsername() + ".");
-    theUser.erasePassword();
     return theUser;
   }
 }

@@ -13,18 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.domain;
+package edu.kit.datamanager.auth.exceptions;
 
-import lombok.Data;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
  *
  * @author jejkal
  */
-@Data
-public class DataEntryMetadataElement{
+@ResponseStatus(value = HttpStatus.PRECONDITION_FAILED)
+public class EtagMismatchException extends RuntimeException{
 
-  private String key;
-  private String value;
+  public EtagMismatchException(){
+    super();
+  }
+
+  public EtagMismatchException(String message){
+    super(message);
+  }
 
 }

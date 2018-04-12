@@ -13,24 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.exceptions;
+package edu.kit.datamanager.auth.annotations;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author jejkal
  */
-@ResponseStatus(value = HttpStatus.UNPROCESSABLE_ENTITY)
-public class PatchApplicationException extends RuntimeException{
+@Documented
+@Target(ElementType.FIELD)
+@Retention(RUNTIME)
+public @interface SecureUpdate{
 
-  public PatchApplicationException(){
-    super();
-  }
-
-  public PatchApplicationException(String message){
-    super(message);
-  }
-
+  String[] value();
 }
