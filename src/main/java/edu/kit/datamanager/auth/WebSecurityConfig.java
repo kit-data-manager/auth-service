@@ -49,7 +49,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
   private String secretKey;
 
   @Autowired
-  private IUserService userDetailsService;
+  private IUserService userService;
 
   @Autowired
   private BCryptPasswordEncoder passwordEncoder;
@@ -67,7 +67,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 //  }
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(secretKey, userDetailsService, passwordEncoder, logger));
+    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(secretKey, userService, passwordEncoder, logger));
   }
 
   @Override

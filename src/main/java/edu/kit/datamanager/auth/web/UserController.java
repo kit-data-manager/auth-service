@@ -73,11 +73,11 @@ public class UserController extends GenericResourceController<RepoUser>{
   private ApplicationEventPublisher eventPublisher;
 
   @Autowired
-  private final IUserService userDetailsService;
+  private final IUserService userService;
 
-  public UserController(IUserService userDetailsService){
+  public UserController(IUserService userService){
     super();
-    this.userDetailsService = userDetailsService;
+    this.userService = userService;
   }
 
   @ApiOperation(value = "Obtain caller information for the currently authenticated user.",
@@ -88,7 +88,7 @@ public class UserController extends GenericResourceController<RepoUser>{
   public ResponseEntity<RepoUser> me(WebRequest wr, HttpServletResponse hsr){
     if(!AuthenticationHelper.isAnonymous()){
       String principal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
-      RepoUser me = (RepoUser) userDetailsService.loadUserByUsername(principal);
+      RepoUser me = (RepoUser) userService.loadUserByUsername(principal);
       if(me == null){
         //this should acutually never happen as the user has been authenticated before mapping to an existing user
         LOGGER.error("Authenticated user for principal name {} not found. Returning HTTP INTERNAL_SERVER_ERROR.");
@@ -114,7 +114,7 @@ public class UserController extends GenericResourceController<RepoUser>{
 
     user.setActive(Boolean.TRUE);
     user.setLocked(Boolean.FALSE);
-    RepoUser newUser = userDetailsService.create(user);
+    RepoUser newUser = userService.create(user);
     return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).build();
   }
 
@@ -128,7 +128,7 @@ public class UserController extends GenericResourceController<RepoUser>{
     if(AuthenticationHelper.isAnonymous()){
       throw new UnauthorizedAccessException("Anonymous user access disabled.");
     }
-    Optional<RepoUser> result = userDetailsService.findById(id);
+    Optional<RepoUser> result = userService.findById(id);
     if(!result.isPresent()){
       return ResponseEntity.notFound().build();
     }
@@ -162,7 +162,7 @@ public class UserController extends GenericResourceController<RepoUser>{
     }
     LOGGER.debug("Rebuilding page request for page {}, size {} and sort {}.", pgbl.getPageNumber(), pageSize, pgbl.getSort());
     PageRequest request = PageRequest.of(pgbl.getPageNumber(), pageSize, pgbl.getSort());
-    Page<RepoUser> page = userDetailsService.findAll(example, request);
+    Page<RepoUser> page = userService.findAll(example, request);
     if(pgbl.getPageNumber() > page.getTotalPages()){
       LOGGER.debug("Requested page number {} is too large. Number of pages is: {}. Returning empty list.", pgbl.getPageNumber(), page.getTotalPages());
     }
@@ -177,7 +177,7 @@ public class UserController extends GenericResourceController<RepoUser>{
     if(AuthenticationHelper.isAnonymous()){
       throw new UnauthorizedAccessException("Please login in order to be able to modify resources.");
     }
-    Optional<RepoUser> result = userDetailsService.findById(id);
+    Optional<RepoUser> result = userService.findById(id);
     if(!result.isPresent()){
       return ResponseEntity.notFound().build();
     }
@@ -207,7 +207,7 @@ public class UserController extends GenericResourceController<RepoUser>{
       throw new UpdateForbiddenException("Patch not applicable.");
     }
     LOGGER.info("Persisting patched user.");
-    userDetailsService.update(updated);
+    userService.update(updated);
     LOGGER.info("User successfully persisted.");
     return ResponseEntity.noContent().build();
   }
@@ -218,11 +218,12 @@ public class UserController extends GenericResourceController<RepoUser>{
     if(AuthenticationHelper.isAnonymous()){
       throw new UnauthorizedAccessException("Please login in order to be able to modify resources.");
     }
+
     if(!AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
       throw new UpdateForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required.");
     }
 
-    Optional<RepoUser> result = userDetailsService.findById(id);
+    Optional<RepoUser> result = userService.findById(id);
     if(result.isPresent()){
       //user was found and caller has ADMIN role
       RepoUser user = result.get();
@@ -230,7 +231,7 @@ public class UserController extends GenericResourceController<RepoUser>{
         throw new EtagMismatchException("ETag not matching, resource has changed.");
       }
       user.setActive(Boolean.FALSE);
-      userDetailsService.update(user);
+      userService.update(user);
     }
 
     return ResponseEntity.noContent().build();

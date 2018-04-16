@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.auth.web;
 
+import edu.kit.datamanager.auth.exceptions.UnauthorizedAccessException;
 import edu.kit.datamanager.auth.web.security.JwtAuthenticationToken;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import io.swagger.annotations.Api;
@@ -54,6 +55,10 @@ public class LoginController{
     @ApiResponse(code = 200, message = "Login successful")})
   @PostMapping("/api/v1/login")
   public String login(@RequestParam(name = "groupId", required = false) String groupId){
+    if(!(AuthenticationHelper.getAuthentication() instanceof JwtAuthenticationToken)){
+      throw new UnauthorizedAccessException("Access denied");
+    }
+
     JwtAuthenticationToken token = ((JwtAuthenticationToken) AuthenticationHelper.getAuthentication());
     LOGGER.debug("Successfully logged in as user {}.", token.getUserId());
     return token.getToken();

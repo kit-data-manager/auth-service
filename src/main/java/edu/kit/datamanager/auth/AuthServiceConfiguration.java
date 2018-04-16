@@ -17,7 +17,7 @@ package edu.kit.datamanager.auth;
 
 import edu.kit.datamanager.auth.service.INoteService;
 import edu.kit.datamanager.auth.service.IUserService;
-import edu.kit.datamanager.auth.service.impl.CustomUserDetailsService;
+import edu.kit.datamanager.auth.service.impl.RepoUserService;
 import edu.kit.datamanager.auth.service.impl.NoteService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,10 +29,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AuthServiceConfiguration{
 
-  @Bean
-  public IUserService customUserDetailsService(){
-    return new CustomUserDetailsService();
-  }
+//  @Bean
+//  public IUserService customUserDetailsService(){
+//    return new RepoUserService();
+//  }
 //
 //  @Bean
 //  public INoteService noteService(){

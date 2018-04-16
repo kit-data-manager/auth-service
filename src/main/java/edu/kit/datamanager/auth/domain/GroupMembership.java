@@ -15,10 +15,11 @@
  */
 package edu.kit.datamanager.auth.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.kit.datamanager.auth.annotations.Searchable;
 import edu.kit.datamanager.auth.annotations.SecureUpdate;
-import io.swagger.annotations.ApiModel;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -29,7 +30,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -42,13 +42,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-@EqualsAndHashCode(callSuper = false)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class GroupMembership{
 
   @Autowired
   @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.NONE)
   @Transient
+  @JsonIgnore
   private Logger LOGGER;
 
   @Id
@@ -57,10 +58,16 @@ public class GroupMembership{
   @Searchable
   private Long id;
   @OneToOne
-  private RepoUserGroup group;
-  @OneToOne
   private RepoUser user;
   @Enumerated(EnumType.STRING)
   private RepoUserGroup.GroupRole role;
+
+  public GroupMembership(){
+  }
+
+  public GroupMembership(RepoUser user, RepoUserGroup.GroupRole role){
+    this.user = user;
+    this.role = role;
+  }
 
 }

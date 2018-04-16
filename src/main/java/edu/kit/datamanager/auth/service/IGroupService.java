@@ -13,20 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth.dao;
+package edu.kit.datamanager.auth.service;
 
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
+import java.util.Optional;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
  *
  * @author jejkal
  */
-public interface IGroupDao extends JpaRepository<RepoUserGroup, Long>, JpaSpecificationExecutor<RepoUserGroup>{
+public interface IGroupService extends HealthIndicator{
 
   public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqual(String username, RepoUserGroup.GroupRole role, Pageable pgbl);
 
+  public Page<RepoUserGroup> findAll(RepoUserGroup example, Pageable pgbl);
+
+  Optional<RepoUserGroup> findById(final Long id);
+
+  RepoUserGroup create(final RepoUserGroup entity);
+
+  RepoUserGroup update(final RepoUserGroup entity);
+
+  void delete(final RepoUserGroup entity);
 }

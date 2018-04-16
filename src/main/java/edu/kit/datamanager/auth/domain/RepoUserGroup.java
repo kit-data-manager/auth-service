@@ -15,13 +15,17 @@
  */
 package edu.kit.datamanager.auth.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import edu.kit.datamanager.auth.annotations.Searchable;
 import edu.kit.datamanager.auth.annotations.SecureUpdate;
 import static edu.kit.datamanager.auth.domain.RepoUser.UserRole.values;
 import io.swagger.annotations.ApiModel;
 import java.util.HashSet;
 import java.util.Set;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -33,6 +37,10 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.collections4.Predicate;
+import org.hibernate.annotations.Cascade;
+import org.hibernate.annotations.CascadeType;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -45,11 +53,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @EqualsAndHashCode(callSuper = false)
+@JsonInclude(Include.NON_NULL)
 public class RepoUserGroup{
 
   public enum GroupRole{
     GROUP_MANAGER("ROLE_GROUP_MANAGER"),
-    GROUP_MEMBER("ROLE_GROUP_MEMBER");
+    GROUP_MEMBER("ROLE_GROUP_MEMBER"),
+    NO_MEMBER("ROLE_NO_MEMBER");
 
     private final String value;
 
@@ -75,6 +85,7 @@ public class RepoUserGroup{
   @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.NONE)
   @Transient
+  @JsonIgnore
   private Logger LOGGER;
 
   @Id
@@ -85,11 +96,47 @@ public class RepoUserGroup{
   @SecureUpdate({"FORBIDDEN"})
   @Searchable
   private String identifier;
+  @Column(nullable = false, unique = true)
   @Searchable
-  @SecureUpdate({"ROLE_GROUP_MANAGER"})
+  @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
   private String groupname;
-
+  @Column(nullable = false)
+  @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
+  private Boolean active = true;
   @OneToMany
+  @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
+  @Cascade(CascadeType.ALL)
   private Set<GroupMembership> memberships = new HashSet<>();
+
+  public final void addOrUpdateMembership(final RepoUser user, GroupRole role){
+    GroupMembership membership = IteratorUtils.find(memberships.iterator(), new Predicate<GroupMembership>(){
+      @Override
+      public boolean evaluate(GroupMembership t){
+        return Long.compare(user.getId(), t.getUser().getId()) == 0;
+      }
+    });
+
+    if(membership == null){
+      //new membership
+      memberships.add(new GroupMembership(user, role));
+    } else{
+      //update membership
+      membership.setRole(role);
+    }
+  }
+
+  public final GroupRole getUserRole(final String userName){
+    GroupMembership membership = IteratorUtils.find(memberships.iterator(), new Predicate<GroupMembership>(){
+      @Override
+      public boolean evaluate(GroupMembership t){
+        return userName.equals(t.getUser().getUsername());
+      }
+    });
+    if(membership != null){
+      return membership.getRole();
+    }
+
+    return GroupRole.NO_MEMBER;
+  }
 
 }

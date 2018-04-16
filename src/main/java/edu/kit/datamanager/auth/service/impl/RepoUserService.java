@@ -38,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @Transactional
-public class CustomUserDetailsService implements IUserService{
+public class RepoUserService implements IUserService{
 
   @Autowired
   private IUserDao dao;
@@ -49,7 +49,7 @@ public class CustomUserDetailsService implements IUserService{
   @PersistenceContext
   private EntityManager em;
 
-  public CustomUserDetailsService(){
+  public RepoUserService(){
     super();
   }
 
@@ -86,10 +86,7 @@ public class CustomUserDetailsService implements IUserService{
   @Override
   public RepoUser create(RepoUser entity){
     entity.setPassword(passwordEncoder.encode(entity.getPassword()));
-    System.out.println("ID " + entity.getId());
-    RepoUser result = getDao().save(entity);
-    System.out.println("RESULT " + result);
-    return result;
+    return getDao().save(entity);
   }
 
   @Override

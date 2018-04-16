@@ -17,10 +17,8 @@ package edu.kit.datamanager.auth.util;
 
 import edu.kit.datamanager.auth.annotations.SecureUpdate;
 import edu.kit.datamanager.auth.exceptions.CustomInternalServerError;
-import edu.kit.datamanager.auth.exceptions.UpdateForbiddenException;
 import java.lang.reflect.Field;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import org.springframework.security.core.GrantedAuthority;
 

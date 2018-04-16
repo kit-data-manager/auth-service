@@ -38,6 +38,7 @@ import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger.web.ApiKeyVehicle;
 import springfox.documentation.swagger.web.SecurityConfiguration;
+import springfox.documentation.swagger.web.SecurityConfigurationBuilder;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 /**
@@ -75,11 +76,11 @@ public class SwaggerConfig{
             //  .securitySchemes(newArrayList(auth))
             //  .securityContexts(securityContexts);
             .securityContexts(Lists.newArrayList(securityContext()))
-            .securitySchemes(Lists.newArrayList(apiKey()));
+            .securitySchemes(Lists.newArrayList(apiKey(), new BasicAuth("test")));
   }
 
   private ApiKey apiKey(){
-    return new ApiKey("AUTHORIZATION", "Authorization", "header");
+    return new ApiKey("AUTHORIZATION", "api_key", "header");
   }
 
   private ApiInfo apiInfo(){

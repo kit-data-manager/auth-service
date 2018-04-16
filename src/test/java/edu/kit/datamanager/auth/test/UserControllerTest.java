@@ -227,9 +227,11 @@ public class UserControllerTest{
 
   @Test
   public void testPatchForbiddenField() throws Exception{
+    String etag = this.mockMvc.perform(get("/api/v1/users/" + adminUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
     String patch = "[{\"op\": \"replace\",\"path\": \"/identifier\",\"value\": \"invalid\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + adminUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isForbidden());
   }
 
   @Test
@@ -241,9 +243,12 @@ public class UserControllerTest{
 
   @Test
   public void testPatchUsernameWithoutAdminRole() throws Exception{
+    String etag = this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
+
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + defaultUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isForbidden());
   }
 
   @Test
@@ -275,9 +280,11 @@ public class UserControllerTest{
 
   @Test
   public void testPatchUsernameAsUser() throws Exception{
+    String etag = this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + defaultUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isForbidden());
 
     this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("user"));
@@ -285,9 +292,12 @@ public class UserControllerTest{
 
   @Test
   public void testApplyInvalidPatch() throws Exception{
+    String etag = this.mockMvc.perform(get("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
+
     String patch = "[{\"op\": \"replace\",\"path\": \"/unknownProperty\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isUnprocessableEntity());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isUnprocessableEntity());
   }
 
   @Test

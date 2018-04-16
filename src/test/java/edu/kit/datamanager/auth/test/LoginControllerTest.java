@@ -34,7 +34,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
@@ -77,6 +76,8 @@ public class LoginControllerTest{
   private String secretKey;
 
   private RepoUser adminUser;
+  private RepoUser defaultUser;
+  private RepoUser inactiveUser;
 
   @Before
   public void setUp(){
@@ -92,6 +93,26 @@ public class LoginControllerTest{
     admin.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.ADMINISTRATOR));
     admin.setEmail("test@mail.org");
     adminUser = userDao.saveAndFlush(admin);
+
+    //add defaultUser
+    RepoUser user = new RepoUser();
+    user.setUsername("user");
+    user.setActive(true);
+    user.setLocked(false);
+    user.setPassword(passwordEncoder.encode("user"));
+    user.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    user.setEmail("test@mail.org");
+    defaultUser = userDao.saveAndFlush(user);
+
+    //add inactiveUser
+    RepoUser inactive = new RepoUser();
+    inactive.setUsername("inactive");
+    inactive.setActive(false);
+    inactive.setLocked(false);
+    inactive.setPassword(passwordEncoder.encode("inactive"));
+    inactive.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    inactive.setEmail("test@mail.org");
+    inactiveUser = userDao.saveAndFlush(inactive);
   }
 
   @Test
@@ -108,6 +129,35 @@ public class LoginControllerTest{
     //use token to obtain own user information
     this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
             "Bearer " + jwt)).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("admin"));
+  }
+
+  @Test
+  public void testLoginAsInactive() throws Exception{
+    this.mockMvc.perform(post("/api/v1/login/").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("inactive:inactive".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void testResourceAccessAsDisabledUser() throws Exception{
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("inactive:inactive".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void testDisableUserAfterFailedLogins() throws Exception{
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isOk());
+
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:wrongPassword".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:wrongPassword".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:wrongPassword".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+
   }
 
 }
