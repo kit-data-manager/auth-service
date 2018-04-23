@@ -15,8 +15,8 @@
  */
 package edu.kit.datamanager.auth.domain;
 
-import edu.kit.datamanager.auth.annotations.Searchable;
-import edu.kit.datamanager.auth.annotations.SecureUpdate;
+import edu.kit.datamanager.annotations.Searchable;
+import edu.kit.datamanager.annotations.SecureUpdate;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -25,7 +25,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.Constants;
-import edu.kit.datamanager.auth.exceptions.CustomInternalServerError;
+import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.service.exceptions.CustomInternalServerError;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
@@ -44,7 +45,6 @@ import javax.persistence.PreUpdate;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-import javax.persistence.Version;
 import lombok.AccessLevel;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -72,50 +72,24 @@ public class RepoUser implements UserDetails{
   @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.NONE)
   @Transient
+  @JsonIgnore
   private Logger LOGGER;
 
-  public enum UserRole{
-    CURATOR("ROLE_CURATOR"),
-    ADMINISTRATOR("ROLE_ADMINISTRATOR"),
-    USER("ROLE_USER"),
-    GUEST("ROLE_GUEST"),
-    INACTIVE("ROLE_INACTIVE");
-
-    private final String value;
-
-    UserRole(String role){
-      this.value = role;
-    }
-
-    @Override
-    public String toString(){
-      return value;
-    }
-
-    public static UserRole fromValue(String value){
-      for(UserRole uRole : values()){
-        if(uRole.value.equals(value)){
-          return uRole;
-        }
-      }
-      throw new IllegalArgumentException("Value argument '" + value + " has no matching UserRole.");
-    }
-  }
-
   private static RepoUser SYSTEM = null;
-  private static RepoUser ANONYMOUS = null;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @SecureUpdate({"FORBIDDEN"})
   @Searchable
   private Long id;
+  @Searchable
   @SecureUpdate({"FORBIDDEN"})
-  @Searchable
-  private String identifier;
-  @Searchable
-  @SecureUpdate({"ROLE_ADMINISTRATOR"})
+  @Column(nullable = false, unique = true)
   private String username;
+  @Searchable
+  private String firstname;
+  @Searchable
+  private String lastname;
   @Searchable
   private String email;
   private String activeGroup;
@@ -137,28 +111,17 @@ public class RepoUser implements UserDetails{
   @ApiModelProperty(hidden = true)
   private Boolean locked;
   @Transient
-  private transient Collection<UserRole> rolesAsEnum = new ArrayList<>();
+  private transient Collection<RepoUserRole> rolesAsEnum = new ArrayList<>();
   @SecureUpdate({"ROLE_ADMINISTRATOR"})
   private String roles;
 
   public static final synchronized RepoUser getSystemUser(){
     if(SYSTEM == null){
       SYSTEM = new RepoUser();
-      SYSTEM.setIdentifier(Constants.SYSTEM_USER_ID);
       SYSTEM.setUsername("System");
-      SYSTEM.setRolesAsEnum(Arrays.asList(UserRole.ADMINISTRATOR, UserRole.USER, UserRole.GUEST, UserRole.CURATOR));
+      SYSTEM.setRolesAsEnum(Arrays.asList(RepoUserRole.ADMINISTRATOR, RepoUserRole.USER, RepoUserRole.GUEST, RepoUserRole.CURATOR));
     }
     return SYSTEM;
-  }
-
-  public static final synchronized RepoUser getAnonymousUser(){
-    if(ANONYMOUS == null){
-      ANONYMOUS = new RepoUser();
-      ANONYMOUS.setIdentifier(Constants.ANONYMOUS_USER_ID);
-      ANONYMOUS.setUsername("Anonymous");
-      ANONYMOUS.setRolesAsEnum(Arrays.asList(UserRole.GUEST));
-    }
-    return ANONYMOUS;
   }
 
   public static RepoUser createUser(){
@@ -167,11 +130,17 @@ public class RepoUser implements UserDetails{
 
   public RepoUser(){
     super();
-    setRolesAsEnum(Arrays.asList(UserRole.USER));
+    setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
   }
 
   public void erasePassword(){
     this.password = null;
+  }
+
+  public void setUsername(String username){
+    if(username != null){
+      this.username = username.toLowerCase();
+    }
   }
 
   @Override
@@ -212,7 +181,7 @@ public class RepoUser implements UserDetails{
         if(jsonNode.isArray()){
           for(JsonNode node : jsonNode){
             String role = node.asText();
-            UserRole r = UserRole.fromValue(role);
+            RepoUserRole r = RepoUserRole.fromValue(role);
             rolesAsEnum.add(r);
           }
         }
@@ -229,8 +198,8 @@ public class RepoUser implements UserDetails{
     String[] values = new String[rolesAsEnum.size()];
 
     int cnt = 0;
-    for(UserRole role : rolesAsEnum){
-      values[cnt] = role.value;
+    for(RepoUserRole role : rolesAsEnum){
+      values[cnt] = role.getValue();
       cnt++;
     }
 

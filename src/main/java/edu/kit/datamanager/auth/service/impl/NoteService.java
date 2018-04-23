@@ -15,26 +15,6 @@
  */
 package edu.kit.datamanager.auth.service.impl;
 
-import edu.kit.datamanager.auth.dao.ByExampleSpecification;
-import edu.kit.datamanager.auth.dao.INoteDao;
-import edu.kit.datamanager.auth.dao.PermissionSpecification;
-import edu.kit.datamanager.auth.domain.AclEntry;
-import edu.kit.datamanager.auth.domain.Note;
-import edu.kit.datamanager.auth.service.INoteService;
-import java.util.List;
-import java.util.Optional;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 /**
  *
  * @author jejkal

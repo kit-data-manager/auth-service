@@ -20,6 +20,7 @@ import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.auth.service.impl.RepoUserService;
 import edu.kit.datamanager.auth.service.impl.RepoUserGroupService;
+import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -32,12 +33,16 @@ import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Scope;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.filter.CommonsRequestLoggingFilter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 
 /**
@@ -45,10 +50,14 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * @author jejkal
  */
 @SpringBootApplication
+@ComponentScan(basePackages = {"edu.kit.datamanager"})
 public class Application{
 
   @Autowired
   private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
+
+  @Autowired
+  private Javers javers;
 
   @Bean
   @Scope("prototype")
@@ -89,7 +98,7 @@ public class Application{
 
   @Bean
   public IGroupService userGroupService(){
-    return new RepoUserGroupService();
+    return new RepoUserGroupService(javers);
   }
 
   @Bean
@@ -102,18 +111,6 @@ public class Application{
   public JsonViewSupportFactoryBean views(){
     return new JsonViewSupportFactoryBean();
   }
-  
-  @Bean
-    public CommonsRequestLoggingFilter logFilter() {
-        CommonsRequestLoggingFilter filter
-          = new CommonsRequestLoggingFilter();
-        filter.setIncludeQueryString(true);
-        filter.setIncludePayload(true);
-        filter.setMaxPayloadLength(10000);
-        filter.setIncludeHeaders(false);
-        filter.setAfterMessagePrefix("REQUEST DATA : ");
-        return filter;
-    }
 
 //  @Bean
 //  public Queue myQueue(){

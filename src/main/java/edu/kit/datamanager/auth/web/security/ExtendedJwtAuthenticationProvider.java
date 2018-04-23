@@ -16,30 +16,23 @@
 package edu.kit.datamanager.auth.web.security;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.auth.domain.RepoUser;
-import edu.kit.datamanager.auth.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.auth.service.IUserService;
-import edu.kit.datamanager.auth.util.JsonMapper;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
+import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
+import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
+import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
+import static edu.kit.datamanager.util.JsonMapper.mapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
-import static java.util.stream.Collectors.toList;
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
-import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -48,7 +41,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
  *
  * @author jejkal
  */
-public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMapper{
+public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider{
 
   private Logger LOGGER;
 
@@ -56,7 +49,8 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
   private final IUserService userService;
   private final BCryptPasswordEncoder passwordEncoder;
 
-  public JwtAuthenticationProvider(String secretKey, IUserService userService, BCryptPasswordEncoder passwordEncoder, Logger logger){
+  public ExtendedJwtAuthenticationProvider(String secretKey, IUserService userService, BCryptPasswordEncoder passwordEncoder, Logger logger){
+    super(secretKey, logger);
     this.secretKey = secretKey;
     this.userService = userService;
     this.passwordEncoder = passwordEncoder;
@@ -70,6 +64,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
 
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException{
+    System.out.println("AUTHENTICATE");
     try{
       return authentication instanceof JwtAuthenticationToken
               ? getJwtAuthentication(((JwtAuthenticationToken) authentication).getToken())
@@ -92,52 +87,14 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
     user.getRolesAsEnum().forEach((r) -> {
       roleStrings.add(r.toString());
     });
-    JwtAuthenticationToken result = new JwtAuthenticationToken(grantedAuthorities(roleStrings), Long.toString(user.getId()), user.getUsername(), token);
-    return result;
-  }
 
-  @SuppressWarnings("unchecked")
-  private Authentication getJwtAuthentication(String token){
-    Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token);
-    List<String> rolesList = new ArrayList<>();
-    String roleClaim = claimsJws.getBody().get("roles", String.class);
-    if(roleClaim == null){
-      LOGGER.error("No 'roles' claim found in JWT " + claimsJws);
-      throw new CustomInternalServerError("Unprocessable authentication token.");
-    }
-
-    try{
-      final JsonNode jsonNode = new ObjectMapper().readTree(roleClaim);
-      if(jsonNode.isArray()){
-        for(JsonNode node : jsonNode){
-          String role = node.asText();
-          rolesList.add(role);
-        }
-      } else{
-        throw new IllegalArgumentException("Roles claim '" + roleClaim + "' seems to be no JSON array.");
-      }
-    } catch(IOException | IllegalArgumentException ex){
-      LOGGER.error("Failed to read user roles from " + this, ex);
-      throw new CustomInternalServerError("Failed to read user roles.");
-    }
-
-    List<SimpleGrantedAuthority> grantedAuthorities = grantedAuthorities((Set<String>) new HashSet<>(rolesList));
-    String username = claimsJws.getBody().get("username", String.class);
-    JwtAuthenticationToken jwtToken = new JwtAuthenticationToken(
-            grantedAuthorities,
-            username,
-            username,
-            token);
-    jwtToken.setGroupId(claimsJws.getBody().get("activeGroup", String.class));
-    return jwtToken;
-  }
-
-  private List<SimpleGrantedAuthority> grantedAuthorities(Set<String> roles){
-    return roles.stream().map(String::toString).map(SimpleGrantedAuthority::new).collect(toList());
+    return new JwtAuthenticationToken(grantedAuthorities(roleStrings), user.getUsername(), user.getFirstname(), user.getLastname(), groupId, token);
   }
 
   private RepoUser getUser(Authentication authentication) throws IOException{
+    System.out.println("CHECK " + authentication.getName());
     RepoUser theUser = (RepoUser) userService.loadUserByUsername(authentication.getName());
+    System.out.println("USER " + theUser);
     if(!theUser.isEnabled()){
       LOGGER.warn("User " + theUser.getUsername() + " is disabled. Falling back to anonymous access.");
       throw new InvalidAuthenticationException("Access denied");
@@ -155,6 +112,7 @@ public class JwtAuthenticationProvider implements AuthenticationProvider, JsonMa
       LOGGER.warn("Wrong password provided for user " + theUser.getUsername() + " (Attempt: " + theUser.getLoginFailures() + ")");
       throw new InvalidAuthenticationException("Access denied");
     }
+    System.out.println("OK");
     LOGGER.debug("Successful login for user " + theUser.getUsername() + ".");
     return theUser;
   }

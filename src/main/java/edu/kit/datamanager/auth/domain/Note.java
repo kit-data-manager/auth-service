@@ -16,39 +16,27 @@
 package edu.kit.datamanager.auth.domain;
 
 import java.io.Serializable;
-import java.util.Set;
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.Table;
-import javax.persistence.Version;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.springframework.hateoas.ResourceSupport;
 
 /**
  *
  * @author jejkal
  */
-@Entity
-@Table(name = "note_inline")
-@Data
-@EqualsAndHashCode(callSuper = false)
+//@Entity
+//@Table(name = "note_inline")
+//@Data
+//@EqualsAndHashCode(callSuper = false)
 public class Note extends ResourceSupport implements Serializable{
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "id")
-  private Long noteId;
-  @Version
-  @Column(name = "VERSION")
-  private Long version;
-  private String value;
-  @OneToMany(cascade = CascadeType.ALL)
-  private Set<AclEntry> acls;
+//  @Id
+//  @GeneratedValue(strategy = GenerationType.IDENTITY)
+//  @Column(name = "id")
+//  private Long noteId;
+//  @Version
+//  @Column(name = "VERSION")
+//  private Long version;
+//  private String value;
+//  @OneToMany(cascade = CascadeType.ALL)
+//  private Set<AclEntry> acls;
 
 }

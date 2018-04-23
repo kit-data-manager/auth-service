@@ -17,6 +17,7 @@ package edu.kit.datamanager.auth.test;
 
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.entities.RepoUserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -90,7 +91,7 @@ public class LoginControllerTest{
     admin.setActive(true);
     admin.setLocked(false);
     admin.setPassword(passwordEncoder.encode("admin"));
-    admin.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.ADMINISTRATOR));
+    admin.setRolesAsEnum(Arrays.asList(RepoUserRole.ADMINISTRATOR));
     admin.setEmail("test@mail.org");
     adminUser = userDao.saveAndFlush(admin);
 
@@ -100,7 +101,7 @@ public class LoginControllerTest{
     user.setActive(true);
     user.setLocked(false);
     user.setPassword(passwordEncoder.encode("user"));
-    user.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    user.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     user.setEmail("test@mail.org");
     defaultUser = userDao.saveAndFlush(user);
 
@@ -110,7 +111,7 @@ public class LoginControllerTest{
     inactive.setActive(false);
     inactive.setLocked(false);
     inactive.setPassword(passwordEncoder.encode("inactive"));
-    inactive.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    inactive.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     inactive.setEmail("test@mail.org");
     inactiveUser = userDao.saveAndFlush(inactive);
   }

@@ -15,24 +15,25 @@
  */
 package edu.kit.datamanager.auth.test;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jackson.jsonpointer.JsonPointer;
 import com.github.fge.jsonpatch.AddOperation;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchOperation;
 import com.github.fge.jsonpatch.RemoveOperation;
-import com.monitorjbl.json.JsonView;
-import static com.monitorjbl.json.Match.match;
 import edu.kit.datamanager.auth.dao.IGroupDao;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.GroupMembership;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
+import edu.kit.datamanager.entities.RepoUserRole;
 import java.util.Arrays;
 import java.util.UUID;
+import org.hamcrest.Matchers;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,17 +97,15 @@ public class GroupControllerTest{
 
   @Before
   public void setUp(){
-    //clean database
     groupDao.deleteAll();
     userDao.deleteAll();
-
     //add admin
     RepoUser admin = new RepoUser();
     admin.setUsername("admin");
     admin.setActive(true);
     admin.setLocked(false);
     admin.setPassword(passwordEncoder.encode("admin"));
-    admin.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.ADMINISTRATOR));
+    admin.setRolesAsEnum(Arrays.asList(RepoUserRole.ADMINISTRATOR));
     admin.setEmail("test@mail.org");
     adminUser = userDao.saveAndFlush(admin);
     //add user
@@ -115,7 +114,7 @@ public class GroupControllerTest{
     user.setActive(true);
     user.setLocked(false);
     user.setPassword(passwordEncoder.encode("user"));
-    user.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    user.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     user.setEmail("test@mail.org");
     defaultUser = userDao.saveAndFlush(user);
     //add other user
@@ -124,7 +123,7 @@ public class GroupControllerTest{
     other.setActive(true);
     other.setLocked(false);
     other.setPassword(passwordEncoder.encode("other"));
-    other.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    other.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     other.setEmail("test@mail.org");
     otherUser = userDao.saveAndFlush(other);
 
@@ -134,7 +133,7 @@ public class GroupControllerTest{
     nomember.setActive(true);
     nomember.setLocked(false);
     nomember.setPassword(passwordEncoder.encode("nomember"));
-    nomember.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    nomember.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     nomember.setEmail("test@mail.org");
     noMemberUser = userDao.saveAndFlush(nomember);
 
@@ -150,13 +149,13 @@ public class GroupControllerTest{
     group2.setGroupname("Other Group");
     group2.addOrUpdateMembership(defaultUser, RepoUserGroup.GroupRole.GROUP_MANAGER);
     group2.addOrUpdateMembership(other, RepoUserGroup.GroupRole.GROUP_MEMBER);
-    otherGroup = groupDao.save(group2);
+    otherGroup = groupDao.saveAndFlush(group2);
   }
 
   @Test
   public void testGetUserGroupListAsAdmin() throws Exception{
     this.mockMvc.perform(get("/api/v1/groups/").param("page", "0").param("size", "10").header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group"));
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group".toUpperCase()));
   }
 
   @Test
@@ -165,7 +164,7 @@ public class GroupControllerTest{
     example.setGroupname("Default Group");
     ObjectMapper mapper = new ObjectMapper();
     this.mockMvc.perform(post("/api/v1/groups/search").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(example)).param("page", "0").param("size", "10").header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group")).andExpect(MockMvcResultMatchers.jsonPath("$[1]").doesNotExist());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group".toUpperCase())).andExpect(MockMvcResultMatchers.jsonPath("$[1]").doesNotExist());
   }
 
   @Test
@@ -174,13 +173,13 @@ public class GroupControllerTest{
     example.setGroupname("%Default%");
     ObjectMapper mapper = new ObjectMapper();
     this.mockMvc.perform(post("/api/v1/groups/search").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(example)).param("page", "0").param("size", "10").header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group")).andExpect(MockMvcResultMatchers.jsonPath("$[1]").doesNotExist());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group".toUpperCase())).andExpect(MockMvcResultMatchers.jsonPath("$[1]").doesNotExist());
   }
 
   @Test
   public void testGetUserGroupListWithExceededPageSize() throws Exception{
     this.mockMvc.perform(get("/api/v1/groups/").param("page", "0").param("size", "1000").header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group"));
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group".toUpperCase()));
   }
 
   @Test
@@ -192,7 +191,7 @@ public class GroupControllerTest{
   @Test
   public void getUserGroupListAsMember() throws Exception{
     this.mockMvc.perform(get("/api/v1/groups/").header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group"));
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(MockMvcResultMatchers.jsonPath("$[0].groupname").value("Default Group".toUpperCase()));
   }
 
   @Test
@@ -209,7 +208,7 @@ public class GroupControllerTest{
   @Test
   public void getUserGroupById() throws Exception{
     this.mockMvc.perform(get("/api/v1/groups/" + defaultGroup.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("Default Group"));
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("Default Group".toUpperCase()));
   }
 
   @Test
@@ -232,7 +231,7 @@ public class GroupControllerTest{
   @Test
   public void getUserGroupByIdAsNoMemberButAdmin() throws Exception{
     this.mockMvc.perform(get("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("Other Group"));
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("Other Group".toUpperCase()));
   }
 
   @Test
@@ -268,7 +267,7 @@ public class GroupControllerTest{
             "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-None-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isNoContent());
 
     this.mockMvc.perform(get("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("test1")).andExpect(header().exists("ETag"));
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("test1".toUpperCase())).andExpect(header().exists("ETag"));
 
   }
 
@@ -277,7 +276,7 @@ public class GroupControllerTest{
     String etag = this.mockMvc.perform(get("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
-    String patch = "[{\"op\": \"replace\",\"path\": \"/identifier\",\"value\": \"test1\"}]";
+    String patch = "[{\"op\": \"replace\",\"path\": \"/id\",\"value\": 4}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isForbidden());
   }
@@ -287,12 +286,12 @@ public class GroupControllerTest{
     String etag = this.mockMvc.perform(get("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
-    String patch = "[{\"op\": \"replace\",\"path\": \"/groupname\",\"value\": \"changed\"}]";
+    String patch = "[{\"op\": \"replace\",\"path\": \"/groupname\",\"value\": \"changedName\"}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
 
     this.mockMvc.perform(get("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("changed")).andExpect(header().exists("ETag"));
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("changedName".toUpperCase())).andExpect(header().exists("ETag"));
   }
 
   @Test
@@ -335,25 +334,16 @@ public class GroupControllerTest{
     long groupId = Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
 
     this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("created"));
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("created".toUpperCase()));
   }
 
   @Test
   public void testCreateGroupWithIdentifier() throws Exception{
     RepoUserGroup created = new RepoUserGroup();
-    created.setGroupname("created");
-    created.setIdentifier("created");
     ObjectMapper mapper = new ObjectMapper();
 
-    String location = this.mockMvc.perform(post("/api/v1/groups/").contentType("application/json-patch+json").content(mapper.writeValueAsString(created)).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isCreated()).andReturn().getResponse().getHeader("Location");
-
-    Assert.assertNotNull(location);
-
-    long groupId = Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
-
-    this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.identifier").value("created"));
+    this.mockMvc.perform(post("/api/v1/groups/").contentType("application/json-patch+json").content(mapper.writeValueAsString(created)).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isBadRequest());
   }
 
   @Test
@@ -370,28 +360,27 @@ public class GroupControllerTest{
     long groupId = Long.parseLong(location.substring(location.lastIndexOf("/") + 1));
 
     String etag = this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("newGroup")).andReturn().getResponse().getHeader("ETag");
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("newGroup".toUpperCase())).andReturn().getResponse().getHeader("ETag");
 
     //Create new memberships entity
     GroupMembership newMembership = new GroupMembership(otherUser, RepoUserGroup.GroupRole.GROUP_MEMBER);
     //build patch operation
-    JsonPatchOperation op = new AddOperation(JsonPointer.of("memberships", "1"), mapper.readTree(mapper.writeValueAsString(newMembership)));
+    JsonPatchOperation op = new AddOperation(JsonPointer.of("memberships", "0"), mapper.readTree(mapper.writeValueAsString(newMembership)));
     JsonPatch patch_add = new JsonPatch(Arrays.asList(op));
 
     //call patch
-    this.mockMvc.perform(patch("/api/v1/groups/" + Long.toString(groupId)).contentType("application/json-patch+json").content(mapper.writeValueAsString(patch_add)).header(HttpHeaders.AUTHORIZATION,
+    this.mockMvc.perform(patch("/api/v1/groups/" + groupId).contentType("application/json-patch+json").content(mapper.writeValueAsString(patch_add)).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
 
     //check for added membership
-    this.mockMvc.perform(get("/api/v1/groups/" + Long.toString(groupId)).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.memberships[1].user.username").value("other"));
-
+    this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.memberships", Matchers.hasSize(2)));
     //update etag
     etag = this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("newGroup")).andReturn().getResponse().getHeader("ETag");
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
     //try delete
-    op = new RemoveOperation(JsonPointer.of("memberships", "1"));
+    op = new RemoveOperation(JsonPointer.of("memberships", "0"));
     JsonPatch patch_remove = new JsonPatch(Arrays.asList(op));
 
     //call patch
@@ -400,7 +389,7 @@ public class GroupControllerTest{
 
     //check for added membership
     this.mockMvc.perform(get("/api/v1/groups/" + Long.toString(groupId)).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.memberships[1]").doesNotExist());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.memberships", Matchers.hasSize(1)));
   }
 
   @Test

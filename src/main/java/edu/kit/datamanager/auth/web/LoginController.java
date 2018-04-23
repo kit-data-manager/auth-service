@@ -15,8 +15,8 @@
  */
 package edu.kit.datamanager.auth.web;
 
-import edu.kit.datamanager.auth.exceptions.UnauthorizedAccessException;
-import edu.kit.datamanager.auth.web.security.JwtAuthenticationToken;
+import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
+import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -60,7 +60,7 @@ public class LoginController{
     }
 
     JwtAuthenticationToken token = ((JwtAuthenticationToken) AuthenticationHelper.getAuthentication());
-    LOGGER.debug("Successfully logged in as user {}.", token.getUserId());
+    LOGGER.debug("Successfully logged in as user {}.", token.getName());
     return token.getToken();
   }
 

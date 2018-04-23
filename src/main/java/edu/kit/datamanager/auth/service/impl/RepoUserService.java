@@ -15,10 +15,11 @@
  */
 package edu.kit.datamanager.auth.service.impl;
 
-import edu.kit.datamanager.auth.dao.ByExampleSpecification;
+import edu.kit.datamanager.dao.ByExampleSpecification;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.service.IUserService;
+import edu.kit.datamanager.entities.RepoUserRole;
 import java.util.Arrays;
 import java.util.Optional;
 import javax.persistence.EntityManager;
@@ -61,7 +62,7 @@ public class RepoUserService implements IUserService{
       return null;
     }
     if(!user.isEnabled()){
-      user.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.INACTIVE));
+      user.setRolesAsEnum(Arrays.asList(RepoUserRole.INACTIVE));
     }
     return user;
   }
@@ -97,6 +98,10 @@ public class RepoUserService implements IUserService{
   @Override
   public void delete(RepoUser entity){
     getDao().delete(entity);
+  }
+
+  public long count(){
+    return dao.count();
   }
 
   protected IUserDao getDao(){

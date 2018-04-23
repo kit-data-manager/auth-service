@@ -18,8 +18,8 @@ package edu.kit.datamanager.auth.domain;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import edu.kit.datamanager.auth.annotations.Searchable;
-import edu.kit.datamanager.auth.annotations.SecureUpdate;
+import edu.kit.datamanager.annotations.Searchable;
+import edu.kit.datamanager.annotations.SecureUpdate;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -58,6 +58,7 @@ public class GroupMembership{
   @Searchable
   private Long id;
   @OneToOne
+  
   private RepoUser user;
   @Enumerated(EnumType.STRING)
   private RepoUserGroup.GroupRole role;

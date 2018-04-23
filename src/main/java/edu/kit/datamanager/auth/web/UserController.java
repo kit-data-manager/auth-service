@@ -20,25 +20,27 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
 import com.github.fge.jsonpatch.JsonPatchException;
-import edu.kit.datamanager.auth.domain.Note;
+import com.monitorjbl.json.JsonResult;
+import com.monitorjbl.json.JsonView;
+import static com.monitorjbl.json.Match.match;
 import edu.kit.datamanager.auth.domain.RepoUser;
-import edu.kit.datamanager.auth.exceptions.AccessForbiddenException;
-import edu.kit.datamanager.auth.exceptions.BadArgumentException;
-import edu.kit.datamanager.auth.exceptions.CustomInternalServerError;
-import edu.kit.datamanager.auth.exceptions.EtagMismatchException;
-import edu.kit.datamanager.auth.exceptions.PatchApplicationException;
-import edu.kit.datamanager.auth.exceptions.UnauthorizedAccessException;
-import edu.kit.datamanager.auth.exceptions.UpdateForbiddenException;
+import edu.kit.datamanager.exceptions.AccessForbiddenException;
+import edu.kit.datamanager.exceptions.BadArgumentException;
+import edu.kit.datamanager.service.exceptions.CustomInternalServerError;
+import edu.kit.datamanager.exceptions.EtagMismatchException;
+import edu.kit.datamanager.exceptions.PatchApplicationException;
+import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
+import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.auth.service.IUserService;
-import edu.kit.datamanager.auth.util.PatchUtil;
-import edu.kit.datamanager.auth.web.hateoas.event.PaginatedResultsRetrievedEvent;
+import edu.kit.datamanager.util.PatchUtil;
+import edu.kit.datamanager.controller.hateoas.event.PaginatedResultsRetrievedEvent;
 import edu.kit.datamanager.controller.GenericResourceController;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,6 +68,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Api(value = "User Management")
 public class UserController extends GenericResourceController<RepoUser>{
 
+  private JsonResult json = JsonResult.instance();
+
   @Autowired
   private Logger LOGGER;
 
@@ -78,6 +82,35 @@ public class UserController extends GenericResourceController<RepoUser>{
   public UserController(IUserService userService){
     super();
     this.userService = userService;
+  }
+
+  @Override
+  public ResponseEntity<RepoUser> create(@RequestBody RepoUser user, WebRequest request, HttpServletResponse response){
+    user.setId(null);
+
+    if(user.getUsername() == null){
+      throw new BadArgumentException("No username assigned to provided user.");
+    } else{
+      //enforce lowercase username
+      user.setUsername(user.getUsername());
+    }
+    if(user.getPassword() == null){
+      throw new BadArgumentException("No password assigned to provided user.");
+    }
+
+    if(userService.count() == 0){
+      //first user, add ADMINISTRATOR role
+      user.getRolesAsEnum().add(RepoUserRole.ADMINISTRATOR);
+    } else{
+      if(user.getRolesAsEnum().contains(RepoUserRole.ADMINISTRATOR) && (AuthenticationHelper.isAnonymous() || !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue()))){
+        throw new BadArgumentException("Self-registration with role ADMINISTRATOR not allowed.");
+      }
+    }
+
+    user.setActive(Boolean.TRUE);
+    user.setLocked(Boolean.FALSE);
+    RepoUser newUser = userService.create(user);
+    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).build();
   }
 
   @ApiOperation(value = "Obtain caller information for the currently authenticated user.",
@@ -103,22 +136,6 @@ public class UserController extends GenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<RepoUser> create(@RequestBody RepoUser user, WebRequest request, HttpServletResponse response){
-    user.setId(null);
-    if(user.getIdentifier() == null){
-      user.setIdentifier(UUID.randomUUID().toString());
-    }
-    if(user.getPassword() == null){
-      throw new BadArgumentException("No password assigned to provided user.");
-    }
-
-    user.setActive(Boolean.TRUE);
-    user.setLocked(Boolean.FALSE);
-    RepoUser newUser = userService.create(user);
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).build();
-  }
-
-  @Override
   public ResponseEntity<List<RepoUser>> findAll(Pageable pgbl, WebRequest wr, HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     return findByExample(null, pgbl, wr, response, uriBuilder);
   }
@@ -135,7 +152,7 @@ public class UserController extends GenericResourceController<RepoUser>{
 
     RepoUser user = result.get();
 
-    if(!AuthenticationHelper.isUser(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+    if(!AuthenticationHelper.isUser(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to read other users.");
     }
 
@@ -145,13 +162,12 @@ public class UserController extends GenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<List<RepoUser>> findByExample(@RequestBody RepoUser example, final Pageable pgbl, final WebRequest wr, final HttpServletResponse response, final UriComponentsBuilder uriBuilder
-  ){
+  public ResponseEntity<List<RepoUser>> findByExample(@RequestBody RepoUser example, final Pageable pgbl, final WebRequest wr, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     if(AuthenticationHelper.isAnonymous()){
       throw new UnauthorizedAccessException("Please login in order to be able to list resources.");
     }
 
-    if(!AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+    if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required.");
     }
 
@@ -166,9 +182,14 @@ public class UserController extends GenericResourceController<RepoUser>{
     if(pgbl.getPageNumber() > page.getTotalPages()){
       LOGGER.debug("Requested page number {} is too large. Number of pages is: {}. Returning empty list.", pgbl.getPageNumber(), page.getTotalPages());
     }
-    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(Note.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), pageSize));
+
+    List<RepoUser> modUsers = json.use(JsonView.with(page.getContent())
+            .onClass(RepoUser.class, match().exclude("password")))
+            .returnValue();
+
+    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(RepoUser.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), pageSize));
     //publish listing event??
-    return ResponseEntity.ok(page.getContent());
+    return ResponseEntity.ok(modUsers);
   }
 
   @Override
@@ -183,7 +204,7 @@ public class UserController extends GenericResourceController<RepoUser>{
     }
     RepoUser user = result.get();
 
-    if(!AuthenticationHelper.isUser(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+    if(!AuthenticationHelper.isUser(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to patch other users.");
     }
 
@@ -219,7 +240,7 @@ public class UserController extends GenericResourceController<RepoUser>{
       throw new UnauthorizedAccessException("Please login in order to be able to modify resources.");
     }
 
-    if(!AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+    if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       throw new UpdateForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required.");
     }
 

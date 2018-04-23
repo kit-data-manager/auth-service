@@ -27,7 +27,7 @@ import org.springframework.data.domain.Pageable;
  */
 public interface IGroupService extends HealthIndicator{
 
-  public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqual(String username, RepoUserGroup.GroupRole role, Pageable pgbl);
+  public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqualAndActiveTrue(String username, RepoUserGroup.GroupRole role, Pageable pgbl);
 
   public Page<RepoUserGroup> findAll(RepoUserGroup example, Pageable pgbl);
 

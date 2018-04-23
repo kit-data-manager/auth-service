@@ -19,14 +19,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import edu.kit.datamanager.auth.annotations.Searchable;
-import edu.kit.datamanager.auth.annotations.SecureUpdate;
-import static edu.kit.datamanager.auth.domain.RepoUser.UserRole.values;
+import edu.kit.datamanager.annotations.Searchable;
+import edu.kit.datamanager.annotations.SecureUpdate;
 import io.swagger.annotations.ApiModel;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -41,6 +42,7 @@ import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.collections4.Predicate;
 import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
+import org.hibernate.annotations.Fetch;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -54,7 +56,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @JsonInclude(Include.NON_NULL)
-public class RepoUserGroup{
+public class RepoUserGroup implements Serializable{
 
   public enum GroupRole{
     GROUP_MANAGER("ROLE_GROUP_MANAGER"),
@@ -65,6 +67,10 @@ public class RepoUserGroup{
 
     GroupRole(String role){
       this.value = role;
+    }
+
+    public String getValue(){
+      return value;
     }
 
     @Override
@@ -93,9 +99,6 @@ public class RepoUserGroup{
   @SecureUpdate({"FORBIDDEN"})
   @Searchable
   private Long id;
-  @SecureUpdate({"FORBIDDEN"})
-  @Searchable
-  private String identifier;
   @Column(nullable = false, unique = true)
   @Searchable
   @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
@@ -103,18 +106,18 @@ public class RepoUserGroup{
   @Column(nullable = false)
   @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
   private Boolean active = true;
-  @OneToMany
+  @OneToMany(cascade = javax.persistence.CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
   @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
-  @Cascade(CascadeType.ALL)
   private Set<GroupMembership> memberships = new HashSet<>();
 
+  public void setGroupname(String groupname){
+    if(groupname != null){
+      this.groupname = groupname.toUpperCase();
+    }
+  }
+
   public final void addOrUpdateMembership(final RepoUser user, GroupRole role){
-    GroupMembership membership = IteratorUtils.find(memberships.iterator(), new Predicate<GroupMembership>(){
-      @Override
-      public boolean evaluate(GroupMembership t){
-        return Long.compare(user.getId(), t.getUser().getId()) == 0;
-      }
-    });
+    GroupMembership membership = IteratorUtils.find(memberships.iterator(), (GroupMembership t) -> Long.compare(user.getId(), t.getUser().getId()) == 0);
 
     if(membership == null){
       //new membership

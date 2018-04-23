@@ -18,6 +18,7 @@ package edu.kit.datamanager.auth.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.entities.RepoUserRole;
 import java.util.Arrays;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -84,7 +85,7 @@ public class UserControllerTest{
     admin.setActive(true);
     admin.setLocked(false);
     admin.setPassword(passwordEncoder.encode("admin"));
-    admin.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.ADMINISTRATOR));
+    admin.setRolesAsEnum(Arrays.asList(RepoUserRole.ADMINISTRATOR));
     admin.setEmail("test@mail.org");
     adminUser = userDao.saveAndFlush(admin);
     //add user
@@ -93,7 +94,7 @@ public class UserControllerTest{
     user.setActive(true);
     user.setLocked(false);
     user.setPassword(passwordEncoder.encode("user"));
-    user.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    user.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     user.setEmail("test@mail.org");
     defaultUser = userDao.saveAndFlush(user);
 
@@ -103,7 +104,7 @@ public class UserControllerTest{
     inactive.setActive(false);
     inactive.setLocked(false);
     inactive.setPassword(passwordEncoder.encode("inactive"));
-    inactive.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    inactive.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     inactive.setEmail("test@mail.org");
     inactiveUser = userDao.saveAndFlush(inactive);
 
@@ -113,7 +114,7 @@ public class UserControllerTest{
       dummyUser.setUsername("dummy" + i);
       dummyUser.setActive(false);
       dummyUser.setLocked(false);
-      dummyUser.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+      dummyUser.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
       dummyUser.setEmail("dummy@mail.org");
       userDao.saveAndFlush(dummyUser);
     }
@@ -181,7 +182,7 @@ public class UserControllerTest{
   @Test
   public void testGetAdminUserCheckPasswordReset() throws Exception{
     this.mockMvc.perform(get("/api/v1/users/" + adminUser.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.password").isEmpty());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.password").doesNotExist());
   }
 
   @Test
@@ -229,7 +230,7 @@ public class UserControllerTest{
   public void testPatchForbiddenField() throws Exception{
     String etag = this.mockMvc.perform(get("/api/v1/users/" + adminUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
-    String patch = "[{\"op\": \"replace\",\"path\": \"/identifier\",\"value\": \"invalid\"}]";
+    String patch = "[{\"op\": \"replace\",\"path\": \"/id\",\"value\": 2}]";
     this.mockMvc.perform(patch("/api/v1/users/" + adminUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isForbidden());
   }
@@ -257,11 +258,9 @@ public class UserControllerTest{
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
+    //patching username is also not allowed for admin
     this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
-
-    this.mockMvc.perform(get("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("changed")).andExpect(header().exists("ETag"));
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isForbidden());
   }
 
   @Test
@@ -344,7 +343,7 @@ public class UserControllerTest{
     RepoUser created = new RepoUser();
     created.setUsername("created");
     created.setPassword("created");
-    created.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    created.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     created.setEmail("test@mail.org");
     ObjectMapper mapper = new ObjectMapper();
     this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isCreated());
@@ -353,26 +352,70 @@ public class UserControllerTest{
   }
 
   @Test
-  public void testRegisterUserWithIdentifier() throws Exception{
+  public void testRegisterUserTwice() throws Exception{
+    RepoUser noduplicates = new RepoUser();
+    noduplicates.setUsername("noduplicates");
+    noduplicates.setPassword("noduplicates");
+    noduplicates.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
+    noduplicates.setEmail("test@mail.org");
+    ObjectMapper mapper = new ObjectMapper();
+    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(noduplicates))).andDo(print()).andExpect(status().isCreated());
+    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(noduplicates))).andDo(print()).andExpect(status().isConflict());
+  }
+
+  @Test
+  public void testRegisterUserWithoutUsername() throws Exception{
     RepoUser created = new RepoUser();
-    created.setUsername("created_with_id");
-    created.setIdentifier("created_id_1");
-    created.setPassword("created_with_id");
-    created.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    created.setPassword("created");
+    created.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     created.setEmail("test@mail.org");
     ObjectMapper mapper = new ObjectMapper();
-    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isCreated());
-    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("created_with_id:created_with_id".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.identifier").value("created_id_1"));
+    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isBadRequest());
   }
 
   @Test
   public void testRegisterUserWithoutPassword() throws Exception{
     RepoUser created = new RepoUser();
     created.setUsername("created");
-    created.setRolesAsEnum(Arrays.asList(RepoUser.UserRole.USER));
+    created.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     created.setEmail("test@mail.org");
     ObjectMapper mapper = new ObjectMapper();
     this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testRegisterUserAsAdministrator() throws Exception{
+    RepoUser created = new RepoUser();
+    created.setUsername("noAdmin");
+    created.setPassword("noAdmin");
+    created.setRolesAsEnum(Arrays.asList(RepoUserRole.USER, RepoUserRole.ADMINISTRATOR));
+    created.setEmail("test@mail.org");
+    ObjectMapper mapper = new ObjectMapper();
+    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testRegisterFirstUserAsAdministrator() throws Exception{
+    userDao.deleteAll();
+    RepoUser created = new RepoUser();
+    created.setUsername("admin");
+    created.setPassword("admin");
+    created.setRolesAsEnum(Arrays.asList(RepoUserRole.USER, RepoUserRole.ADMINISTRATOR));
+    created.setEmail("test@mail.org");
+    ObjectMapper mapper = new ObjectMapper();
+    this.mockMvc.perform(post("/api/v1/users/").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isCreated());
+    setUp();
+  }
+
+  @Test
+  public void testRegisterOtherAdministratorAsAdministrator() throws Exception{
+    RepoUser created = new RepoUser();
+    created.setUsername("admin2");
+    created.setPassword("admin2");
+    created.setRolesAsEnum(Arrays.asList(RepoUserRole.USER, RepoUserRole.ADMINISTRATOR));
+    created.setEmail("test@mail.org");
+    ObjectMapper mapper = new ObjectMapper();
+    this.mockMvc.perform(post("/api/v1/users/").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsString(created))).andDo(print()).andExpect(status().isCreated());
   }
 }

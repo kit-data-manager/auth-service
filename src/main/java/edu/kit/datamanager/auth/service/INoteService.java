@@ -15,12 +15,7 @@
  */
 package edu.kit.datamanager.auth.service;
 
-import edu.kit.datamanager.auth.domain.AclEntry;
-import edu.kit.datamanager.auth.domain.Note;
-import java.util.List;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  *
@@ -28,13 +23,13 @@ import org.springframework.data.domain.Pageable;
  */
 public interface INoteService extends HealthIndicator{
 
-  public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission);
-
-  public Page<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
-
-  public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission);
-
-  public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
+//  public List<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission);
+//
+//  public Page<Note> findByAclsSidInAndAclsPermissionGreaterThanEqual(List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
+//
+//  public Note findByNoteIdAndAclsSidInAndAclsPermissionGreaterThanEqual(Long noteId, List<String> sids, AclEntry.PERMISSION permission);
+//
+//  public Page<Note> findAll(Note example, List<String> sids, AclEntry.PERMISSION permission, Pageable pgbl);
 
 //// read - one
   // Note findOne(final long id);
@@ -44,11 +39,11 @@ public interface INoteService extends HealthIndicator{
 //  Page<T> findPaginated(int page, int size);
 //
   // write
-  Note create(final Note entity);
-
-  Note update(final Note entity);
-
-  void delete(final Note entity);
+//  Note create(final Note entity);
+//
+//  Note update(final Note entity);
+//
+//  void delete(final Note entity);
 
 //  void deleteById(final long entityId);
 //

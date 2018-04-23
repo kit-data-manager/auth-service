@@ -15,14 +15,17 @@
  */
 package edu.kit.datamanager.auth.service.impl;
 
-import edu.kit.datamanager.auth.dao.ByExampleSpecification;
 import edu.kit.datamanager.auth.dao.IGroupDao;
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.auth.service.IGroupService;
+import edu.kit.datamanager.dao.ByExampleSpecification;
 import java.util.List;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import org.javers.core.Javers;
+import org.javers.repository.jql.QueryBuilder;
+import org.javers.shadow.Shadow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.data.domain.Page;
@@ -44,14 +47,16 @@ public class RepoUserGroupService implements IGroupService{
 
   @PersistenceContext
   private EntityManager em;
+  private final Javers javers;
 
-  public RepoUserGroupService(){
+  public RepoUserGroupService(Javers javers){
     super();
+    this.javers = javers;
   }
 
   @Override
-  public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqual(String username, RepoUserGroup.GroupRole role, Pageable pgbl){
-    return getDao().findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqual(username, role, pgbl);
+  public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqualAndActiveTrue(String username, RepoUserGroup.GroupRole role, Pageable pgbl){
+    return getDao().findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqualAndActiveTrue(username, role, pgbl);
   }
 
   @Override
@@ -67,17 +72,30 @@ public class RepoUserGroupService implements IGroupService{
   @Override
   @Transactional(readOnly = true)
   public Optional<RepoUserGroup> findById(Long id){
+    //QueryBuilder jqlQuery = QueryBuilder.byClass(RepoUserGroup.class).byInstanceId(id, RepoUserGroup.class).withScopeDeepPlus().withVersion(5);
+//
+    //List<Shadow<RepoUserGroup>> shadows = javers.findShadows(jqlQuery.build());
+//    System.out.println(" SIZE " + shadows.size());
+//    shadows.forEach((shadow) -> {
+//      System.out.println("Shadow: " + shadow.getCommitMetadata() + ": " + shadow.get());
+//      System.out.println("Members: " + shadow.get().getMemberships().size());
+//    });
+//    return Optional.of(shadows.get(0).get());
     return getDao().findById(id);
   }
 
   @Override
   public RepoUserGroup create(RepoUserGroup entity){
-    return getDao().save(entity);
+    RepoUserGroup group = getDao().saveAndFlush(entity);
+    // javers.commit(AuthenticationHelper.getPrincipal(), group);
+    return group;
   }
 
   @Override
   public RepoUserGroup update(RepoUserGroup entity){
-    return getDao().save(entity);
+    RepoUserGroup group = getDao().saveAndFlush(entity);
+    // javers.commit(AuthenticationHelper.getPrincipal(), group);
+    return group;
   }
 
   @Override

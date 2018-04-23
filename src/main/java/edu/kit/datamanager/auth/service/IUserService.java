@@ -37,4 +37,6 @@ public interface IUserService extends HealthIndicator, UserDetailsService{
   RepoUser update(final RepoUser entity);
 
   void delete(final RepoUser entity);
+
+  long count();
 }

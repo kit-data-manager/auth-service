@@ -23,20 +23,19 @@ import com.github.fge.jsonpatch.JsonPatchException;
 import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
-import edu.kit.datamanager.auth.domain.Note;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.auth.domain.RepoUserGroup.GroupRole;
-import edu.kit.datamanager.auth.exceptions.AccessForbiddenException;
-import edu.kit.datamanager.auth.exceptions.CustomInternalServerError;
-import edu.kit.datamanager.auth.exceptions.EtagMismatchException;
-import edu.kit.datamanager.auth.exceptions.PatchApplicationException;
-import edu.kit.datamanager.auth.exceptions.UnauthorizedAccessException;
-import edu.kit.datamanager.auth.exceptions.UpdateForbiddenException;
+import edu.kit.datamanager.exceptions.AccessForbiddenException;
+import edu.kit.datamanager.service.exceptions.CustomInternalServerError;
+import edu.kit.datamanager.exceptions.EtagMismatchException;
+import edu.kit.datamanager.exceptions.PatchApplicationException;
+import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
+import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
-import edu.kit.datamanager.auth.util.PatchUtil;
-import edu.kit.datamanager.auth.web.hateoas.event.PaginatedResultsRetrievedEvent;
+import edu.kit.datamanager.util.PatchUtil;
+import edu.kit.datamanager.controller.hateoas.event.PaginatedResultsRetrievedEvent;
 import io.swagger.annotations.Api;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +46,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.WebRequest;
 import edu.kit.datamanager.controller.GenericResourceController;
+import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.BadArgumentException;
+import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -96,12 +98,14 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
       throw new UnauthorizedAccessException("Anonymous group creation disabled.");
     }
     group.setId(null);
-    if(group.getIdentifier() == null){
-      group.setIdentifier(UUID.randomUUID().toString());
+    if(group.getGroupname() == null){
+      throw new BadArgumentException("No groupname assigned to provided user.");
+    } else{
+      //enforce uppercase groupname
+      group.setGroupname(group.getGroupname());
     }
-
     //assign caller membership
-    String caller = (String) AuthenticationHelper.getAuthentication().getPrincipal();
+    String caller = (String) AuthenticationHelper.getUsername();
     RepoUser theUser = (RepoUser) userService.loadUserByUsername(caller);
     if(theUser == null){
       //this should acutually never happen as the user has been authenticated before mapping to an existing user
@@ -120,6 +124,7 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
     if(AuthenticationHelper.isAnonymous()){
       throw new UnauthorizedAccessException("Anonymous group access disabled.");
     }
+
     Optional<RepoUserGroup> result = userGroupService.findById(id);
     if(!result.isPresent()){
       return ResponseEntity.notFound().build();
@@ -127,14 +132,14 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
 
     RepoUserGroup group = result.get();
 
-    if(!group.getActive() && !AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+    if(!group.getActive() && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       return ResponseEntity.notFound().build();
     }
 
     RepoUserGroup.GroupRole role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());
     if(GroupRole.NO_MEMBER.equals(role)){
       //no member, check for admin access
-      if(!AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+      if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
         throw new AccessForbiddenException("Group access only allowed for group members.");
       }
     }
@@ -166,18 +171,18 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
     LOGGER.debug("Rebuilding page request for page {}, size {} and sort {}.", pgbl.getPageNumber(), pageSize, pgbl.getSort());
     PageRequest request = PageRequest.of(pgbl.getPageNumber(), pageSize, pgbl.getSort());
     Page<RepoUserGroup> page;
-    if(AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+    if(AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       //do find all
       page = userGroupService.findAll(example, request);
     } else{
       //query based on membership
-      page = userGroupService.findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqual((String) AuthenticationHelper.getAuthentication().getPrincipal(), GroupRole.GROUP_MEMBER, request);
+      page = userGroupService.findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqualAndActiveTrue((String) AuthenticationHelper.getAuthentication().getPrincipal(), GroupRole.GROUP_MEMBER, request);
     }
 
     if(pgbl.getPageNumber() > page.getTotalPages()){
       LOGGER.debug("Requested page number {} is too large. Number of pages is: {}. Returning empty list.", pgbl.getPageNumber(), page.getTotalPages());
     }
-    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(Note.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), pageSize));
+    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(RepoUserGroup.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), pageSize));
     //publish listing event??
 
     List<RepoUserGroup> modGroups = json.use(JsonView.with(page.getContent())
@@ -189,7 +194,6 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
 
   @Override
   public ResponseEntity patch(@PathVariable("id") final Long id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response){
-    System.out.println("PATCH " + patch);
     if(AuthenticationHelper.isAnonymous()){
       throw new UnauthorizedAccessException("Please login in order to be able to modify resources.");
     }
@@ -197,16 +201,19 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
     if(!result.isPresent()){
       return ResponseEntity.notFound().build();
     }
+
     RepoUserGroup group = result.get();
     RepoUserGroup.GroupRole role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());
     boolean adminAccess = false;
-    if(!GroupRole.GROUP_MANAGER.equals(role)){
-      if(!AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+    boolean managerAccess = GroupRole.GROUP_MANAGER.equals(role);
+    if(!managerAccess || !group.getActive()){
+      if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
         throw new AccessForbiddenException("Insufficient role. ROLE_GROUP_MANAGER or ROLE_ADMINISTRATOR required to patch group.");
       } else{
         adminAccess = true;
       }
     }
+
     if(!request.checkNotModified(Integer.toString(group.hashCode()))){
       throw new EtagMismatchException("ETag not matching, resource has changed.");
     }
@@ -224,14 +231,20 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
     }
 
     Collection<GrantedAuthority> userGrants = new ArrayList<>();
-    userGrants.add(new SimpleGrantedAuthority(role.toString()));
+    userGrants.add(new SimpleGrantedAuthority(role.getValue()));
 
     if(adminAccess){
       LOGGER.debug("Admin access detected. Adding ADMINISTRATOR role to granted authorities.");
-      userGrants.add(new SimpleGrantedAuthority(RepoUser.UserRole.ADMINISTRATOR.toString()));
+      userGrants.add(new SimpleGrantedAuthority(RepoUserRole.ADMINISTRATOR.getValue()));
     }
     if(!PatchUtil.canUpdate(group, updated, userGrants)){
       throw new UpdateForbiddenException("Patch not applicable.");
+    }
+
+    //check is caller has revoked its GROUP_MANAGER status
+    role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());
+    if(managerAccess && !GroupRole.GROUP_MANAGER.equals(role)){
+      throw new UpdateForbiddenException("You cannot revoke your GROUP_MANAGER status by youself.");
     }
 
     LOGGER.info("Persisting patched group.");
@@ -254,7 +267,7 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
       RepoUserGroup.GroupRole role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());
       if(!GroupRole.GROUP_MANAGER.equals(role)){
         //check admin access
-        if(!AuthenticationHelper.hasAuthority(RepoUser.UserRole.ADMINISTRATOR.toString())){
+        if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
           throw new UpdateForbiddenException("Insufficient role. ROLE_GROUP_MANAGER or ROLE_ADMINISTRATOR required.");
         }
       }

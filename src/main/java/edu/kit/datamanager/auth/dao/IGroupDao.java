@@ -25,8 +25,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  *
  * @author jejkal
  */
+//@JaversSpringDataAuditable
 public interface IGroupDao extends JpaRepository<RepoUserGroup, Long>, JpaSpecificationExecutor<RepoUserGroup>{
 
-  public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqual(String username, RepoUserGroup.GroupRole role, Pageable pgbl);
+  public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqualAndActiveTrue(String username, RepoUserGroup.GroupRole role, Pageable pgbl);
 
 }
