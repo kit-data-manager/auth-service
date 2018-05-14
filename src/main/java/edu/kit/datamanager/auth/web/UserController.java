@@ -15,11 +15,7 @@
  */
 package edu.kit.datamanager.auth.web;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
-import com.github.fge.jsonpatch.JsonPatchException;
 import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
@@ -28,13 +24,12 @@ import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.service.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.EtagMismatchException;
-import edu.kit.datamanager.exceptions.PatchApplicationException;
 import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.util.PatchUtil;
 import edu.kit.datamanager.controller.hateoas.event.PaginatedResultsRetrievedEvent;
-import edu.kit.datamanager.controller.GenericResourceController;
+import edu.kit.datamanager.controller.IGenericResourceController;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import io.swagger.annotations.Api;
@@ -66,7 +61,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Controller
 @RequestMapping(value = "/api/v1/users")
 @Api(value = "User Management")
-public class UserController extends GenericResourceController<RepoUser>{
+public class UserController implements IGenericResourceController<RepoUser>{
 
   private JsonResult json = JsonResult.instance();
 
@@ -110,7 +105,9 @@ public class UserController extends GenericResourceController<RepoUser>{
     user.setActive(Boolean.TRUE);
     user.setLocked(Boolean.FALSE);
     RepoUser newUser = userService.create(user);
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).build();
+    String etag = Integer.toString(user.hashCode());
+    user.erasePassword();
+    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).eTag("\"" + etag + "\"").body(user);
   }
 
   @ApiOperation(value = "Obtain caller information for the currently authenticated user.",
@@ -193,7 +190,7 @@ public class UserController extends GenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity patch(@PathVariable(value = "id") Long id, @RequestBody JsonPatch jp, WebRequest request, HttpServletResponse hsr
+  public ResponseEntity patch(@PathVariable(value = "id") Long id, @RequestBody JsonPatch patch, WebRequest request, HttpServletResponse hsr
   ){
     if(AuthenticationHelper.isAnonymous()){
       throw new UnauthorizedAccessException("Please login in order to be able to modify resources.");
@@ -212,21 +209,8 @@ public class UserController extends GenericResourceController<RepoUser>{
       throw new EtagMismatchException("ETag not matching, resource has changed.");
     }
 
-    ObjectMapper tmpObjectMapper = new ObjectMapper();
-    JsonNode resourceAsNode = tmpObjectMapper.convertValue(user, JsonNode.class);
-    RepoUser updated;
-    try{
-      // Apply the patch
-      JsonNode patchedDataResourceAsNode = jp.apply(resourceAsNode);
-      //convert resource back to POJO
-      updated = tmpObjectMapper.treeToValue(patchedDataResourceAsNode, RepoUser.class);
-    } catch(JsonPatchException | JsonProcessingException ex){
-      LOGGER.error("Failed to apply patch '" + jp.toString() + " to user resource " + user, ex);
-      throw new PatchApplicationException("Failed to apply patch to resource.");
-    }
-    if(!PatchUtil.canUpdate(user, updated, AuthenticationHelper.getAuthentication().getAuthorities())){
-      throw new UpdateForbiddenException("Patch not applicable.");
-    }
+    RepoUser updated = PatchUtil.applyPatch(user, patch, RepoUser.class, AuthenticationHelper.getAuthentication().getAuthorities());
+
     LOGGER.info("Persisting patched user.");
     userService.update(updated);
     LOGGER.info("User successfully persisted.");

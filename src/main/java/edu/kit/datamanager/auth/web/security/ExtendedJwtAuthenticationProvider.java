@@ -64,7 +64,6 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
 
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException{
-    System.out.println("AUTHENTICATE");
     try{
       return authentication instanceof JwtAuthenticationToken
               ? getJwtAuthentication(((JwtAuthenticationToken) authentication).getToken())
@@ -92,9 +91,7 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
   }
 
   private RepoUser getUser(Authentication authentication) throws IOException{
-    System.out.println("CHECK " + authentication.getName());
     RepoUser theUser = (RepoUser) userService.loadUserByUsername(authentication.getName());
-    System.out.println("USER " + theUser);
     if(!theUser.isEnabled()){
       LOGGER.warn("User " + theUser.getUsername() + " is disabled. Falling back to anonymous access.");
       throw new InvalidAuthenticationException("Access denied");
@@ -112,7 +109,6 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
       LOGGER.warn("Wrong password provided for user " + theUser.getUsername() + " (Attempt: " + theUser.getLoginFailures() + ")");
       throw new InvalidAuthenticationException("Access denied");
     }
-    System.out.println("OK");
     LOGGER.debug("Successful login for user " + theUser.getUsername() + ".");
     return theUser;
   }

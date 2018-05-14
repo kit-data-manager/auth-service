@@ -15,11 +15,7 @@
  */
 package edu.kit.datamanager.auth.web;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.fge.jsonpatch.JsonPatch;
-import com.github.fge.jsonpatch.JsonPatchException;
 import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
@@ -29,7 +25,6 @@ import edu.kit.datamanager.auth.domain.RepoUserGroup.GroupRole;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.service.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.EtagMismatchException;
-import edu.kit.datamanager.exceptions.PatchApplicationException;
 import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.auth.service.IGroupService;
@@ -45,16 +40,14 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.WebRequest;
-import edu.kit.datamanager.controller.GenericResourceController;
+import edu.kit.datamanager.controller.IGenericResourceController;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.BadArgumentException;
-import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -72,7 +65,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Controller
 @RequestMapping(value = "/api/v1/groups")
 @Api(value = "Group Management")
-public class GroupController extends GenericResourceController<RepoUserGroup>{
+public class GroupController implements IGenericResourceController<RepoUserGroup>{
 
   private JsonResult json = JsonResult.instance();
 
@@ -115,8 +108,8 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
     group.addOrUpdateMembership(theUser, GroupRole.GROUP_MANAGER);
 
     RepoUserGroup newGroup = userGroupService.create(group);
-
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(newGroup.getId(), request, response)).toUri()).build();
+    String etag = Integer.toString(group.hashCode());
+    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(newGroup.getId(), request, response)).toUri()).eTag("\"" + etag + "\"").body(newGroup);
   }
 
   @Override
@@ -217,18 +210,6 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
     if(!request.checkNotModified(Integer.toString(group.hashCode()))){
       throw new EtagMismatchException("ETag not matching, resource has changed.");
     }
-    ObjectMapper tmpObjectMapper = new ObjectMapper();
-    JsonNode resourceAsNode = tmpObjectMapper.convertValue(group, JsonNode.class);
-    RepoUserGroup updated;
-    try{
-      // Apply the patch
-      JsonNode patchedDataResourceAsNode = patch.apply(resourceAsNode);
-      //convert resource back to POJO
-      updated = tmpObjectMapper.treeToValue(patchedDataResourceAsNode, RepoUserGroup.class);
-    } catch(JsonPatchException | JsonProcessingException ex){
-      LOGGER.error("Failed to apply patch '" + patch.toString() + " to group resource " + group, ex);
-      throw new PatchApplicationException("Failed to apply patch to resource.");
-    }
 
     Collection<GrantedAuthority> userGrants = new ArrayList<>();
     userGrants.add(new SimpleGrantedAuthority(role.getValue()));
@@ -237,9 +218,8 @@ public class GroupController extends GenericResourceController<RepoUserGroup>{
       LOGGER.debug("Admin access detected. Adding ADMINISTRATOR role to granted authorities.");
       userGrants.add(new SimpleGrantedAuthority(RepoUserRole.ADMINISTRATOR.getValue()));
     }
-    if(!PatchUtil.canUpdate(group, updated, userGrants)){
-      throw new UpdateForbiddenException("Patch not applicable.");
-    }
+
+    RepoUserGroup updated = PatchUtil.applyPatch(group, patch, RepoUserGroup.class, userGrants);
 
     //check is caller has revoked its GROUP_MANAGER status
     role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());

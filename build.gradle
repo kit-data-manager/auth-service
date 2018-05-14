@@ -1,6 +1,7 @@
 buildscript {
    repositories { 
       mavenLocal() 
+      jcenter()
       mavenCentral()
    }
    dependencies {
@@ -23,6 +24,7 @@ jar {
 
 repositories {
    mavenLocal() 
+   jcenter()
    mavenCentral()
 }
 
@@ -47,8 +49,8 @@ dependencies {
    
    compile("org.javers:javers-spring-boot-starter-sql:3.9.0")
    
-   compile("io.springfox:springfox-swagger2:2.8.0")
-   compile("io.springfox:springfox-swagger-ui:2.8.0")
+   compile("io.springfox:springfox-swagger2:2.9.0")
+   compile("io.springfox:springfox-swagger-ui:2.9.0")
 
    //compile("org.springframework.data:spring-data-rest-hal-browser")
    compile("edu.kit.datamanager:service-base:0.1")

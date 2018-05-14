@@ -20,8 +20,12 @@ import static com.google.common.collect.Lists.newArrayList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.util.UriComponentsBuilder;
 import springfox.documentation.builders.AuthorizationScopeBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -67,12 +71,9 @@ public class SwaggerConfig{
     return new Docket(DocumentationType.SWAGGER_2)
             .select()
             .apis(RequestHandlerSelectors.basePackage("edu.kit.datamanager.auth.web"))
-            //.paths(regex("/v1/*"))
-            // .apis(RequestHandlerSelectors.any())
             .paths(PathSelectors.any())
             .build().apiInfo(apiInfo())
-            //  .securitySchemes(newArrayList(auth))
-            //  .securityContexts(securityContexts);
+            .ignoredParameterTypes(Pageable.class, WebRequest.class, HttpServletResponse.class, UriComponentsBuilder.class)
             .securityContexts(Lists.newArrayList(securityContext()))
             .securitySchemes(Lists.newArrayList(apiKey(), new BasicAuth("test")));
   }

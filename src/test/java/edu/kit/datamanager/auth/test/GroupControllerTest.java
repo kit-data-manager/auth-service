@@ -317,7 +317,7 @@ public class GroupControllerTest{
     created.setGroupname("created");
     ObjectMapper mapper = new ObjectMapper();
 
-    this.mockMvc.perform(post("/api/v1/groups/").contentType("application/json-patch+json").content(mapper.writeValueAsString(created))).andExpect(status().isUnauthorized());
+    this.mockMvc.perform(post("/api/v1/groups/").contentType("application/json").content(mapper.writeValueAsString(created))).andExpect(status().isUnauthorized());
   }
 
   @Test
