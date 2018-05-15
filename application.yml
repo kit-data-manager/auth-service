@@ -1,6 +1,0 @@
-secret:
- key: test123
-management:
-   endpoint:
-      health:
-        show-details: "ALWAYS"
