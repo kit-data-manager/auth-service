@@ -16,6 +16,7 @@
 package edu.kit.datamanager.auth.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.auth.dao.IGroupDao;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.entities.RepoUserRole;
@@ -68,7 +69,8 @@ public class UserControllerTest{
 
   @Autowired
   private IUserDao userDao;
-
+  @Autowired
+  private IGroupDao groupDao;
   @Autowired
   private BCryptPasswordEncoder passwordEncoder;
 
@@ -79,6 +81,7 @@ public class UserControllerTest{
   @Before
   public void setUp(){
     //clean database
+    groupDao.deleteAll();
     userDao.deleteAll();
 
     //add admin

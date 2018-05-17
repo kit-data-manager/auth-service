@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.auth.test;
 
+import edu.kit.datamanager.auth.dao.IGroupDao;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.entities.RepoUserRole;
@@ -69,7 +70,8 @@ public class LoginControllerTest{
 
   @Autowired
   private IUserDao userDao;
-
+  @Autowired
+  private IGroupDao groupDao;
   @Autowired
   private BCryptPasswordEncoder passwordEncoder;
 
@@ -83,6 +85,7 @@ public class LoginControllerTest{
   @Before
   public void setUp(){
     //clean database
+    groupDao.deleteAll();
     userDao.deleteAll();
 
     //add admin
