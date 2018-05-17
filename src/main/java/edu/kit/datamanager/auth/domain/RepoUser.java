@@ -75,8 +75,6 @@ public class RepoUser implements UserDetails{
   @JsonIgnore
   private Logger LOGGER;
 
-  private static RepoUser SYSTEM = null;
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @SecureUpdate({"FORBIDDEN"})
@@ -114,15 +112,6 @@ public class RepoUser implements UserDetails{
   private transient Collection<RepoUserRole> rolesAsEnum = new ArrayList<>();
   @SecureUpdate({"ROLE_ADMINISTRATOR"})
   private String roles;
-
-  public static final synchronized RepoUser getSystemUser(){
-    if(SYSTEM == null){
-      SYSTEM = new RepoUser();
-      SYSTEM.setUsername("System");
-      SYSTEM.setRolesAsEnum(Arrays.asList(RepoUserRole.ADMINISTRATOR, RepoUserRole.USER, RepoUserRole.GUEST, RepoUserRole.CURATOR));
-    }
-    return SYSTEM;
-  }
 
   public static RepoUser createUser(){
     return new RepoUser();
