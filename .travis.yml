@@ -2,9 +2,7 @@ language: java
 jdk:
 - oraclejdk8
 script:
-- cd libraries/service-base; ./gradlew clean check
-- "./gradlew clean check"
-- "./gradlew jacocoTestReport"
+- "sh ./build-with-dependencies.sh"
 after_success:
 - "./gradlew coveralls"
 env:

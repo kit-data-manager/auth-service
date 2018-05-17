@@ -43,6 +43,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
@@ -73,6 +74,7 @@ import org.springframework.util.Base64Utils;
   DirtiesContextTestExecutionListener.class,
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
+@ActiveProfiles("test")
 public class GroupControllerTest{
 
   @Autowired
