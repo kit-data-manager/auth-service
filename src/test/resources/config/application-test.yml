@@ -1,6 +1,8 @@
-secret:
- key: testOnly
+repo:
+  jwtSecret: test123
+
 management:
    endpoint:
       health:
         show-details: "ALWAYS"
+
