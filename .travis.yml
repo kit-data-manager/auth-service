@@ -1,10 +1,14 @@
 language: java
 jdk:
 - oraclejdk8
-install:
+install: true
+script:
 - sh ./build-with-dependencies.sh
 after_success:
 - "./gradlew coveralls"
-env:
-  global:
-  - secure: lrrQiPLreSY07jcW63boXZ2hrH4MqglnjCiprmWnydPrFEkwWSd/A4w2SrOc2xEBA/uWYye+jpyLOUVuYPgk+40yXBXkFU/sYfatt+nqbctf3H8fff9fhEHCc88g3nNmCud4s9/mYBJIuEu+5Sd9S5zIg3vEHDS2gAA8ZKKxaEEl3MNch/+tAsVySxviq5E4sfGKYsPJh+8AkXg8cIUQCZHx+cgHdrk50IzirpRJqZd67E/4HBK5xPUWFXsLDfH+TufOlK3W03gqlck3Q+rnxpcPsfaRog5+jcKNzNr7QaV0yL9T0TLRVn+yTERwqLd6Uj9BEbK+B4RA7eCDGRDC9WX92ANZ8dxdU0iyY0v0bIAuKnPUrjtMxtnRbyDUyU8iCV5dpr0jcyTUSdcG+ImCYLEOAOhr67+B2be9FcK/EndDgIT8SSZnaQUKv99rcBSHudECjoxrMQXgdOhVKDyn5OLAgFBOEL/XzcRIupwF3SPSaQ+pMWBpmOzZTUhhwdCQHcmckO19ObJe5532r6xar9xPoP6xajMjaIKZjsgLmSRKAwkvLLp2gSEJlyK+hOT1ObO/fis4tkUC5hgbmSYTFxLVruO4ORm5HZGyg+YzxKI4XP42cM5/E6eEZIFllYP8I2ykRnD77sgyhvT+9hyr9IlVOrHqYAGnkT5Jb+7UAZM=
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
