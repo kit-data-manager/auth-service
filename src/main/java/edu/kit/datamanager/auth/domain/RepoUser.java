@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.Constants;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.service.exceptions.CustomInternalServerError;
 import io.swagger.annotations.ApiModel;
@@ -54,7 +53,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -68,12 +67,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 @JsonInclude(Include.NON_NULL)
 public class RepoUser implements UserDetails{
 
-  @Autowired
   @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.NONE)
   @Transient
   @JsonIgnore
-  private Logger LOGGER;
+  private Logger LOGGER = LoggerFactory.getLogger(RepoUser.class.getCanonicalName());
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -196,6 +194,7 @@ public class RepoUser implements UserDetails{
       ObjectMapper mapper = new ObjectMapper();
       roles = mapper.writeValueAsString(values);
     } catch(JsonProcessingException ex){
+      //There should be no scenario where serializing a string array into json fails. However, log and throw error.
       LOGGER.error("Failed to write user roles from " + this, ex);
       throw new CustomInternalServerError("Failed to write user roles.");
     }
