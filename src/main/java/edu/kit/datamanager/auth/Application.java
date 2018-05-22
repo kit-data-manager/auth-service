@@ -16,6 +16,7 @@
 package edu.kit.datamanager.auth;
 
 import com.monitorjbl.json.JsonViewSupportFactoryBean;
+import edu.kit.datamanager.auth.configuration.ApplicationProperties;
 import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.auth.service.impl.RepoUserService;
@@ -34,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.TypeExcludeFilter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -64,6 +66,12 @@ public class Application{
   public Logger logger(InjectionPoint injectionPoint){
     Class<?> targetClass = injectionPoint.getMember().getDeclaringClass();
     return LoggerFactory.getLogger(targetClass.getCanonicalName());
+  }
+
+  @Bean
+  @ConfigurationProperties("auth")
+  public ApplicationProperties applicationProperties(){
+    return new ApplicationProperties();
   }
 
   @Bean

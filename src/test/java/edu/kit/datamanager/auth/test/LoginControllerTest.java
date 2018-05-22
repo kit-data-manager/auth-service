@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.auth.test;
 
+import edu.kit.datamanager.auth.configuration.ApplicationProperties;
 import edu.kit.datamanager.auth.dao.IGroupDao;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
@@ -75,8 +76,8 @@ public class LoginControllerTest{
   @Autowired
   private BCryptPasswordEncoder passwordEncoder;
 
-  @Value("${secret.key}")
-  private String secretKey;
+  @Autowired
+  private ApplicationProperties applicationProperties;
 
   private RepoUser adminUser;
   private RepoUser defaultUser;
@@ -127,7 +128,7 @@ public class LoginControllerTest{
     String jwt = result.getResponse().getContentAsString();
 
     //check token (validate signature and check username)
-    Jws<Claims> claimsJws = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(jwt);
+    Jws<Claims> claimsJws = Jwts.parser().setSigningKey(applicationProperties.getJwtSecret()).parseClaimsJws(jwt);
     Assert.assertEquals(adminUser.getUsername(), claimsJws.getBody().get("username", String.class));
 
     //use token to obtain own user information

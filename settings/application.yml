@@ -1,5 +1,5 @@
-secret:
- key: test123
+auth:
+ jwtSecret: test123
 management:
    endpoint:
       health:

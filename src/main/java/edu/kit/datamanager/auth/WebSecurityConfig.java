@@ -15,13 +15,13 @@
  */
 package edu.kit.datamanager.auth;
 
+import edu.kit.datamanager.auth.configuration.ApplicationProperties;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.auth.web.security.ExtendedJwtAuthenticationProvider;
 import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
 import edu.kit.datamanager.security.filter.NoopAuthenticationEventPublisher;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -45,8 +45,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
   @Autowired
   private Logger logger;
 
-  @Value("${secret.key}")
-  private String secretKey;
+  @Autowired
+  private ApplicationProperties applicationProperties;
 
   @Autowired
   private IUserService userService;
@@ -67,7 +67,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 //  }
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new ExtendedJwtAuthenticationProvider(secretKey, userService, passwordEncoder, logger));
+    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new ExtendedJwtAuthenticationProvider(applicationProperties.getJwtSecret(), userService, passwordEncoder, logger));
   }
 
   @Override
