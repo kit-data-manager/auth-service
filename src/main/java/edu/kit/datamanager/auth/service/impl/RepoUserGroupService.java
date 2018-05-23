@@ -19,13 +19,9 @@ import edu.kit.datamanager.auth.dao.IGroupDao;
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.dao.ByExampleSpecification;
-import java.util.List;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import org.javers.core.Javers;
-import org.javers.repository.jql.QueryBuilder;
-import org.javers.shadow.Shadow;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.data.domain.Page;
@@ -47,11 +43,11 @@ public class RepoUserGroupService implements IGroupService{
 
   @PersistenceContext
   private EntityManager em;
-  private final Javers javers;
+  // private final Javers javers;
 
-  public RepoUserGroupService(Javers javers){
+  public RepoUserGroupService(){//Javers javers){
     super();
-    this.javers = javers;
+    // this.javers = javers;
   }
 
   @Override
