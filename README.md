@@ -6,7 +6,7 @@ be handed over to other services for authorization decisions.
 
 ## How to build
 
-In order to build this module you'll need:
+In order to build this microservice you'll need:
 
 * Java SE Development Kit 8 or higher
 
@@ -73,7 +73,7 @@ user@localhost:/home/user/auth-service$ java -jar build/libs/auth-service.jar
 ```
 
 If your 'application.yml' is not located inside the project folder you can provide it using the command line argument --spring.config.location=<PATH_TO_APPLICATION.YML>
-As soon as the microservice is started, you can browser to 
+As soon as the microservice is started, you can browse to 
 
 http://localhost:8080/swagger-ui.html
 
