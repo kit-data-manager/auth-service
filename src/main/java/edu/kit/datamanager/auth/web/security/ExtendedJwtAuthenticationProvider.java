@@ -21,7 +21,6 @@ import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
-import static edu.kit.datamanager.util.JsonMapper.mapper;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.IOException;
@@ -81,7 +80,7 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     }
     user.erasePassword();
     user.setActiveGroup(groupId);
-    String token = Jwts.builder().setPayload(mapper.writeValueAsString(user)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
+    String token = Jwts.builder().setPayload(MAPPER.writeValueAsString(user)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
     Set<String> roleStrings = new HashSet<>();
     user.getRolesAsEnum().forEach((r) -> {
       roleStrings.add(r.toString());

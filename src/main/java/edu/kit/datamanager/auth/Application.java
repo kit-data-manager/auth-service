@@ -52,7 +52,6 @@ public class Application{
 
   @Autowired
   private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
-
 //  @Autowired
 //  private Javers javers;
 

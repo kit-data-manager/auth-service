@@ -58,10 +58,7 @@ public class RepoUserService implements IUserService{
   @Transactional(readOnly = true)
   public RepoUser loadUserByUsername(String name){
     RepoUser user = getDao().findByUsername(name);
-    if(user == null){
-      return null;
-    }
-    if(!user.isEnabled()){
+    if(user != null && !user.isEnabled()){
       user.setRolesAsEnum(Arrays.asList(RepoUserRole.INACTIVE));
     }
     return user;
@@ -100,6 +97,7 @@ public class RepoUserService implements IUserService{
     getDao().delete(entity);
   }
 
+  @Override
   public long count(){
     return dao.count();
   }
