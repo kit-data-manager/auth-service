@@ -23,13 +23,18 @@ import edu.kit.datamanager.entities.RepoUserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.impl.DefaultClaims;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
@@ -162,6 +167,21 @@ public class LoginControllerTest{
 
     this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void testExpiredToken() throws Exception{
+    Claims claims = new DefaultClaims();
+    claims.put("username", adminUser.getUsername());
+    claims.put("firstname", adminUser.getFirstname());
+    claims.put("lastname", adminUser.getLastname());
+    claims.put("email", adminUser.getEmail());
+    claims.put("activeGroup", adminUser.getActiveGroup());
+    claims.put("roles", adminUser.getRolesAsEnum());
+    String token = Jwts.builder().setClaims(claims).setExpiration(DateUtils.addMilliseconds(new Date(), 1)).signWith(SignatureAlgorithm.HS512, applicationProperties.getJwtSecret()).compact();
+
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Bearer " + token)).andDo(print()).andExpect(status().isUnauthorized());
 
   }
 

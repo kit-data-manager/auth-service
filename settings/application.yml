@@ -30,3 +30,5 @@ logging:
    level:
       edu.kit: WARN
       org.springframework.web.servlet.mvc: WARN
+server:
+   port: 8080

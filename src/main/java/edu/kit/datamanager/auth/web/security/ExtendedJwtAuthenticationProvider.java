@@ -15,15 +15,15 @@
  */
 package edu.kit.datamanager.auth.web.security;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import java.io.IOException;
+import io.jsonwebtoken.impl.DefaultClaims;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -63,16 +63,12 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
 
   @Override
   public Authentication authenticate(Authentication authentication) throws AuthenticationException{
-    try{
-      return authentication instanceof JwtAuthenticationToken
-              ? getJwtAuthentication(((JwtAuthenticationToken) authentication).getToken())
-              : getJwtAuthentication(getUser(authentication));
-    } catch(RuntimeException | IOException e){
-      throw new InvalidAuthenticationException("Access denied", e);
-    }
+    return authentication instanceof JwtAuthenticationToken
+            ? getJwtAuthentication(((JwtAuthenticationToken) authentication).getToken())
+            : getJwtAuthentication(getUser(authentication));
   }
 
-  private Authentication getJwtAuthentication(RepoUser user) throws JsonProcessingException{
+  private Authentication getJwtAuthentication(RepoUser user) throws AuthenticationException{
     ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
     String groupId = attr.getRequest().getParameter("groupId");
     if(groupId == null){
@@ -80,7 +76,16 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     }
     user.erasePassword();
     user.setActiveGroup(groupId);
-    String token = Jwts.builder().setPayload(MAPPER.writeValueAsString(user)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
+
+    Claims claims = new DefaultClaims();
+    claims.put("username", user.getUsername());
+    claims.put("firstname", user.getFirstname());
+    claims.put("lastname", user.getLastname());
+    claims.put("email", user.getEmail());
+    claims.put("activeGroup", groupId);
+    claims.put("roles", user.getRolesAsEnum());
+    String token = Jwts.builder().setClaims(claims).setExpiration(DateUtils.addHours(new Date(), 1)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
+
     Set<String> roleStrings = new HashSet<>();
     user.getRolesAsEnum().forEach((r) -> {
       roleStrings.add(r.toString());
@@ -89,7 +94,7 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     return new JwtAuthenticationToken(grantedAuthorities(roleStrings), user.getUsername(), user.getFirstname(), user.getLastname(), groupId, token);
   }
 
-  private RepoUser getUser(Authentication authentication) throws IOException{
+  private RepoUser getUser(Authentication authentication){
     RepoUser theUser = (RepoUser) userService.loadUserByUsername(authentication.getName());
     if(!theUser.isEnabled()){
       LOGGER.warn("User " + theUser.getUsername() + " is disabled. Falling back to anonymous access.");
