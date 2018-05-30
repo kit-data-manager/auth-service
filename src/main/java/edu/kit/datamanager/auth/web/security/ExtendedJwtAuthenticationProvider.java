@@ -83,15 +83,15 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     claims.put("lastname", user.getLastname());
     claims.put("email", user.getEmail());
     claims.put("activeGroup", groupId);
-    claims.put("roles", user.getRolesAsEnum());
+
+    Set<String> rolesAsString = new HashSet<>();
+    user.getRolesAsEnum().forEach((r) -> {
+      rolesAsString.add(r.toString());
+    });
+    claims.put("roles", rolesAsString);
     String token = Jwts.builder().setClaims(claims).setExpiration(DateUtils.addHours(new Date(), 1)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
 
-    Set<String> roleStrings = new HashSet<>();
-    user.getRolesAsEnum().forEach((r) -> {
-      roleStrings.add(r.toString());
-    });
-
-    return new JwtAuthenticationToken(grantedAuthorities(roleStrings), user.getUsername(), user.getFirstname(), user.getLastname(), groupId, token);
+    return new JwtAuthenticationToken(grantedAuthorities(rolesAsString), user.getUsername(), user.getFirstname(), user.getLastname(), groupId, token);
   }
 
   private RepoUser getUser(Authentication authentication){
