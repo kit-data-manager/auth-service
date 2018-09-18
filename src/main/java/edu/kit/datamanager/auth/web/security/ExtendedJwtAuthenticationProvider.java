@@ -94,11 +94,11 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     return new JwtAuthenticationToken(grantedAuthorities(rolesAsString), user.getUsername(), user.getFirstname(), user.getLastname(), groupId, token);
   }
 
-  private RepoUser getUser(Authentication authentication){
+  protected RepoUser getUser(Authentication authentication){
     RepoUser theUser = (RepoUser) userService.loadUserByUsername(authentication.getName());
     if(!theUser.isEnabled()){
       LOGGER.warn("User " + theUser.getUsername() + " is disabled. Falling back to anonymous access.");
-      throw new InvalidAuthenticationException("Access denied");
+      throw new InvalidAuthenticationException("Access denied.");
     }
     String password = theUser.getPassword();
     String providedPassword = (String) authentication.getCredentials();

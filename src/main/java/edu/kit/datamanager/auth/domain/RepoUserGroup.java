@@ -40,7 +40,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.collections4.Predicate;
-import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CascadeType;
 import org.hibernate.annotations.Fetch;
 import org.slf4j.Logger;
