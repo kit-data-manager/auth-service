@@ -312,12 +312,20 @@ public class UserControllerTest{
 
   @Test
   public void testDeleteUserAsAdminRole() throws Exception{
-    String etag = this.mockMvc.perform(get("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+    String etag = this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
-    this.mockMvc.perform(delete("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+    this.mockMvc.perform(delete("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isNoContent());
-    this.mockMvc.perform(get("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
+    this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.active").value("false"));
+
+    //delete inactive user -> physical delete
+    etag = this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
+    this.mockMvc.perform(delete("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isNoContent());
+    this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isNotFound());
   }
 
   @Test

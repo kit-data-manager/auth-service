@@ -235,8 +235,14 @@ public class UserController implements IGenericResourceController<RepoUser>{
       if(!request.checkNotModified(Integer.toString(user.hashCode()))){
         throw new EtagMismatchException("ETag not matching, resource has changed.");
       }
-      user.setActive(Boolean.FALSE);
-      userService.update(user);
+      if(user.getActive()){
+        LOGGER.debug("Deactivating user {}.", user.getUsername());
+        user.setActive(Boolean.FALSE);
+        userService.update(user);
+      } else{
+        LOGGER.debug("User {} is deactivated. Removing user.", user.getUsername());
+        userService.delete(user);
+      }
     }
 
     return ResponseEntity.noContent().build();

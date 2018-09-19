@@ -256,8 +256,14 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
         throw new EtagMismatchException("ETag not matching, resource has changed.");
       }
 
-      group.setActive(Boolean.FALSE);
-      userGroupService.update(group);
+      if(group.getActive()){
+        LOGGER.debug("Deactivating group {}.", group.getGroupname());
+        group.setActive(Boolean.FALSE);
+        userGroupService.update(group);
+      } else{
+        LOGGER.debug("Group {} is deactivated. Removing group.", group.getGroupname());
+        userGroupService.delete(group);
+      }
     }
 
     return ResponseEntity.noContent().build();

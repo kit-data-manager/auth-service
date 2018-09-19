@@ -379,7 +379,7 @@ public class GroupControllerTest{
     etag = this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
-    //try delete
+    //try patch
     op = new RemoveOperation(JsonPointer.of("memberships", "0"));
     JsonPatch patch_remove = new JsonPatch(Arrays.asList(op));
 
@@ -418,6 +418,17 @@ public class GroupControllerTest{
 
     this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andExpect(status().isNotFound());
+
+    
+    //now, delete physically as admin
+    etag = this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
+
+    this.mockMvc.perform(delete("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
+
+    this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isNotFound());
   }
 
   @Test
