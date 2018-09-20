@@ -94,7 +94,7 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     claims.put("roles", rolesAsString);
     String token = Jwts.builder().setClaims(claims).setExpiration(DateUtils.addHours(new Date(), 1)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
 
-    return new JwtAuthenticationToken(grantedAuthorities(rolesAsString), user.getUsername(), user.getFirstname(), user.getLastname(), user.getEmail(), groupId, token);
+    return JwtAuthenticationToken.createUserToken(grantedAuthorities(rolesAsString), user.getUsername(), user.getFirstname(), user.getLastname(), user.getEmail(), groupId, token);
   }
 
   protected RepoUser getUser(Authentication authentication){
