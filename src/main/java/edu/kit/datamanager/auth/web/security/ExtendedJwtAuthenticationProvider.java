@@ -37,6 +37,11 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
+ * Extended JWTAuthentication provider providing authentication via
+ * username/password or JWToken. This provider is intended to be used to provide
+ * both, login and token authentication. The login capabilities are used to
+ * determine the logged in user while accessing the login endpoint in order to
+ * obtain an initial JWToken which is then used for all other accesses.
  *
  * @author jejkal
  */
@@ -74,8 +79,6 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     if(groupId == null){
       groupId = "USERS";
     }
-    user.erasePassword();
-    user.setActiveGroup(groupId);
 
     Claims claims = new DefaultClaims();
     claims.put("username", user.getUsername());
@@ -91,7 +94,7 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     claims.put("roles", rolesAsString);
     String token = Jwts.builder().setClaims(claims).setExpiration(DateUtils.addHours(new Date(), 1)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
 
-    return new JwtAuthenticationToken(grantedAuthorities(rolesAsString), user.getUsername(), user.getFirstname(), user.getLastname(), groupId, token);
+    return new JwtAuthenticationToken(grantedAuthorities(rolesAsString), user.getUsername(), user.getFirstname(), user.getLastname(), user.getEmail(), groupId, token);
   }
 
   protected RepoUser getUser(Authentication authentication){
