@@ -98,7 +98,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
       group.setGroupname(group.getGroupname());
     }
     //assign caller membership
-    String caller = (String) AuthenticationHelper.getUsername();
+    String caller = (String) AuthenticationHelper.getPrincipal();
     RepoUser theUser = (RepoUser) userService.loadUserByUsername(caller);
     if(theUser == null){
       //this should acutually never happen as the user has been authenticated before mapping to an existing user

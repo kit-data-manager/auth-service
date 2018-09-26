@@ -149,7 +149,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
 
     RepoUser user = result.get();
 
-    if(!AuthenticationHelper.isUser(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
+    if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to read other users.");
     }
 
@@ -201,7 +201,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
     }
     RepoUser user = result.get();
 
-    if(!AuthenticationHelper.isUser(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
+    if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to patch other users.");
     }
 

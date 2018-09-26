@@ -15,17 +15,23 @@
  */
 package edu.kit.datamanager.auth.web.security;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.service.IUserService;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
+import static edu.kit.datamanager.security.filter.JwtAuthenticationToken.grantedAuthorities;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.impl.DefaultClaims;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
@@ -75,6 +81,7 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
 
   private Authentication getJwtAuthentication(RepoUser user) throws AuthenticationException{
     ServletRequestAttributes attr = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
+    //creation of JsonWebToken for user logging in
     String groupId = attr.getRequest().getParameter("groupId");
     if(groupId == null){
       groupId = "USERS";
@@ -88,13 +95,24 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     claims.put("activeGroup", groupId);
 
     Set<String> rolesAsString = new HashSet<>();
-    user.getRolesAsEnum().forEach((r) -> {
-      rolesAsString.add(r.toString());
+    user.getRolesAsEnum().forEach((role) -> {
+      rolesAsString.add(role.toString());
     });
-    claims.put("roles", rolesAsString);
+    try{
+      claims.put("roles", new ObjectMapper().writeValueAsString(rolesAsString.toArray(new String[]{})));
+    } catch(JsonProcessingException ex){
+      LOGGER.error("Failed to serialize roles " + rolesAsString + " to JSON.", ex);
+      throw new InvalidAuthenticationException("Failed to create JWToken.", ex);
+    }
+    Set<Map.Entry<String, Object>> claimEntries = claims.entrySet();
+    Map<String, Object> claimMap = new HashMap<>();
+    claimEntries.forEach((entry) -> {
+      claimMap.put(entry.getKey(), entry.getValue());
+    });
+
     String token = Jwts.builder().setClaims(claims).setExpiration(DateUtils.addHours(new Date(), 1)).signWith(SignatureAlgorithm.HS512, secretKey).compact();
 
-    return JwtAuthenticationToken.createUserToken(grantedAuthorities(rolesAsString), user.getUsername(), user.getFirstname(), user.getLastname(), user.getEmail(), groupId, token);
+    return JwtAuthenticationToken.factoryToken(token, claimMap);
   }
 
   protected RepoUser getUser(Authentication authentication){
