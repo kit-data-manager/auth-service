@@ -29,10 +29,10 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -107,7 +107,7 @@ public class RepoUser implements UserDetails{
   @ApiModelProperty(hidden = true)
   private Boolean locked;
   @Transient
-  private transient Collection<RepoUserRole> rolesAsEnum = new ArrayList<>();
+  private transient Collection<RepoUserRole> rolesAsEnum = new LinkedList<>();
   @SecureUpdate({"ROLE_ADMINISTRATOR"})
   private String roles;
 
@@ -117,7 +117,7 @@ public class RepoUser implements UserDetails{
 
   public RepoUser(){
     super();
-    setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
+    addRole(RepoUserRole.USER);
   }
 
   public void erasePassword(){
@@ -156,6 +156,17 @@ public class RepoUser implements UserDetails{
   @JsonIgnore
   public boolean isCredentialsNonExpired(){
     return true;
+  }
+
+  /**
+   * Add a new role.
+   *
+   * @param role The role to add.
+   */
+  public final void addRole(RepoUserRole role){
+    if(!rolesAsEnum.contains(role)){
+      rolesAsEnum.add(role);
+    }
   }
 
   @PostLoad

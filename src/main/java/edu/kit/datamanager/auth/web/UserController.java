@@ -95,7 +95,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
 
     if(userService.count() == 0){
       //first user, add ADMINISTRATOR role
-      user.getRolesAsEnum().add(RepoUserRole.ADMINISTRATOR);
+      user.addRole(RepoUserRole.ADMINISTRATOR);
     } else{
       if(user.getRolesAsEnum().contains(RepoUserRole.ADMINISTRATOR) && (AuthenticationHelper.isAnonymous() || !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue()))){
         throw new BadArgumentException("Self-registration with role ADMINISTRATOR not allowed.");

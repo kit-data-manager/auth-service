@@ -63,6 +63,16 @@ public class RepoUserTest{
   }
 
   @Test
+  public void testAddRole(){
+    user = RepoUser.createUser();
+    user.setUsername("test");
+    user.setRoles("[\"ROLE_GUEST\"]");
+    user.convertRolesToEnum();
+    user.addRole(RepoUserRole.ADMINISTRATOR);
+    Assert.assertEquals(2, user.getRolesAsEnum().size());
+  }
+
+  @Test
   public void testEqualsAndHashCode(){
     Date expire = new Date();
     RepoUser user1 = RepoUser.createUser();
