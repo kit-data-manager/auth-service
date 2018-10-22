@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import io.swagger.annotations.ApiModel;
@@ -65,7 +66,7 @@ import org.slf4j.LoggerFactory;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @JsonInclude(Include.NON_NULL)
-public class RepoUser implements UserDetails{
+public class RepoUser implements UserDetails, EtagSupport{
 
   @Getter(AccessLevel.NONE)
   @Setter(AccessLevel.NONE)
@@ -165,7 +166,11 @@ public class RepoUser implements UserDetails{
    */
   public final void addRole(RepoUserRole role){
     if(!rolesAsEnum.contains(role)){
-      rolesAsEnum.add(role);
+      try{
+        rolesAsEnum.add(role);
+      } catch(UnsupportedOperationException ex){
+        LOGGER.warn("Adding roles is not supported for this instance of RepoUser with roles {}. Probably, the user is inactive.", rolesAsEnum);
+      }
     }
   }
 
@@ -215,5 +220,18 @@ public class RepoUser implements UserDetails{
   @JsonIgnore
   public boolean isEnabled(){
     return isAccountNonExpired() && isAccountNonLocked() && isCredentialsNonExpired();
+  }
+
+  @Override
+  public String getEtag(){
+    //remember password
+    String tmpPwd = getPassword();
+    //reset password to not include it in the etag
+    erasePassword();
+    //create etag
+    String result = Integer.toString(hashCode());
+    //re-set password
+    setPassword(tmpPwd);
+    return result;
   }
 }

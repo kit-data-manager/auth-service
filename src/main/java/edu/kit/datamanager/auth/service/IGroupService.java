@@ -16,7 +16,7 @@
 package edu.kit.datamanager.auth.service;
 
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
-import java.util.Optional;
+import edu.kit.datamanager.service.IGenericService;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,17 +25,30 @@ import org.springframework.data.domain.Pageable;
  *
  * @author jejkal
  */
-public interface IGroupService extends HealthIndicator{
+public interface IGroupService extends IGenericService<RepoUserGroup>, HealthIndicator{
 
   public Page<RepoUserGroup> findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqualAndActiveTrue(String username, RepoUserGroup.GroupRole role, Pageable pgbl);
 
-  public Page<RepoUserGroup> findAll(RepoUserGroup example, Pageable pgbl);
+  /**
+   * Create a new user group using the provided template. This template should contain
+   * at least the group name. In addition, a list of members can be
+   * provided. 
+   *
+   * Furthermore, the implementation must deal with duplicate usernames in an
+   * appropriate way, e.g. by throwing an according runtime exception mapped to
+   * a response code HTTP_CONFLICT.
+   *
+   * @param entity The user to create.
+   *
+   * @return The new resource with an id assigned.
+   *
+   * @throws BadArgumentException if a mandatory field is missing or has an
+   * invalid value.
+   */
+  RepoUserGroup create(final RepoUserGroup entity, String caller);
 
-  Optional<RepoUserGroup> findById(final Long id);
-
-  RepoUserGroup create(final RepoUserGroup entity);
-
+  Page<RepoUserGroup> findAll(RepoUserGroup example, Pageable pgbl, boolean callerIsAdmin);
+          
   RepoUserGroup update(final RepoUserGroup entity);
 
-  void delete(final RepoUserGroup entity);
 }

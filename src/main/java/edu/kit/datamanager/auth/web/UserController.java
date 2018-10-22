@@ -21,21 +21,18 @@ import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
-import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
-import edu.kit.datamanager.exceptions.EtagMismatchException;
-import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.auth.service.IUserService;
-import edu.kit.datamanager.util.PatchUtil;
 import edu.kit.datamanager.controller.hateoas.event.PaginatedResultsRetrievedEvent;
 import edu.kit.datamanager.controller.IGenericResourceController;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.util.AuthenticationHelper;
+import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import java.util.List;
-import java.util.Optional;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,7 +60,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Api(value = "User Management")
 public class UserController implements IGenericResourceController<RepoUser>{
 
-  private JsonResult json = JsonResult.instance();
+  private final JsonResult json = JsonResult.instance();
 
   @Autowired
   private Logger LOGGER;
@@ -81,33 +78,11 @@ public class UserController implements IGenericResourceController<RepoUser>{
 
   @Override
   public ResponseEntity<RepoUser> create(@RequestBody RepoUser user, WebRequest request, HttpServletResponse response){
-    user.setId(null);
+    RepoUser newUser = userService.create(user, AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue()));
 
-    if(user.getUsername() == null){
-      throw new BadArgumentException("No username assigned to provided user.");
-    } else{
-      //enforce lowercase username
-      user.setUsername(user.getUsername());
-    }
-    if(user.getPassword() == null){
-      throw new BadArgumentException("No password assigned to provided user.");
-    }
+    filterAndAutoReturnRepoUser(newUser);
 
-    if(userService.count() == 0){
-      //first user, add ADMINISTRATOR role
-      user.addRole(RepoUserRole.ADMINISTRATOR);
-    } else{
-      if(user.getRolesAsEnum().contains(RepoUserRole.ADMINISTRATOR) && (AuthenticationHelper.isAnonymous() || !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue()))){
-        throw new BadArgumentException("Self-registration with role ADMINISTRATOR not allowed.");
-      }
-    }
-
-    user.setActive(Boolean.TRUE);
-    user.setLocked(Boolean.FALSE);
-    RepoUser newUser = userService.create(user);
-    String etag = Integer.toString(user.hashCode());
-    user.erasePassword();
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).eTag("\"" + etag + "\"").body(user);
+    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).eTag("\"" + user.getEtag() + "\"").build();
   }
 
   @ApiOperation(value = "Obtain caller information for the currently authenticated user.",
@@ -116,20 +91,35 @@ public class UserController implements IGenericResourceController<RepoUser>{
   @RequestMapping(value = {"/me"}, method = {RequestMethod.GET})
   @ResponseBody
   public ResponseEntity<RepoUser> me(WebRequest wr, HttpServletResponse hsr){
-    if(!AuthenticationHelper.isAnonymous()){
-      String principal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
-      RepoUser me = (RepoUser) userService.loadUserByUsername(principal);
-      if(me == null){
-        //this should acutually never happen as the user has been authenticated before mapping to an existing user
-        LOGGER.error("Authenticated user for principal name {} not found. Returning HTTP INTERNAL_SERVER_ERROR.");
-        throw new CustomInternalServerError("Failed to obtain authenticated repository user '" + principal + "'.");
-      }
+    ControllerUtils.checkAnonymousAccess();
 
-      me.erasePassword();
-      return ResponseEntity.ok(me);
-    } else{
-      throw new UnauthorizedAccessException("You are not logged in.");
+    String principal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
+    RepoUser me = (RepoUser) userService.loadUserByUsername(principal);
+    if(me == null){
+      //this should acutually never happen as the user has been authenticated before mapping to an existing user
+      LOGGER.error("Authenticated user for principal name {} not found. Throwing CustomInternalServerError.");
+      throw new CustomInternalServerError("Failed to obtain authenticated repository user '" + principal + "'.");
     }
+
+    filterAndAutoReturnRepoUser(me);
+
+    return ResponseEntity.ok().eTag("\"" + me.getEtag() + "\"").build();
+  }
+
+  @Override
+  public ResponseEntity<RepoUser> getById(@PathVariable(value = "id") Long id, WebRequest request, HttpServletResponse response){
+    ControllerUtils.checkAnonymousAccess();
+
+    RepoUser user = userService.findById(id);
+
+    if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
+      LOGGER.warn("Caller {} is not allowed to request users by id. Only the user himself or users with ROLE_ADMINISTRATOR are allowed to read user details. Throwing AccessForbiddenException.", user.getUsername());
+      throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to read other users.");
+    }
+
+    filterAndAutoReturnRepoUser(user);
+
+    return ResponseEntity.ok().eTag("\"" + user.getEtag() + "\"").build();
   }
 
   @Override
@@ -138,113 +128,74 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<RepoUser> getById(@PathVariable(value = "id") Long id, WebRequest request, HttpServletResponse response){
-    if(AuthenticationHelper.isAnonymous()){
-      throw new UnauthorizedAccessException("Anonymous user access disabled.");
-    }
-    Optional<RepoUser> result = userService.findById(id);
-    if(!result.isPresent()){
-      return ResponseEntity.notFound().build();
-    }
-
-    RepoUser user = result.get();
-
-    if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
-      throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to read other users.");
-    }
-
-    String etag = Integer.toString(user.hashCode());
-    user.erasePassword();
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(user);
-  }
-
-  @Override
   public ResponseEntity<List<RepoUser>> findByExample(@RequestBody RepoUser example, final Pageable pgbl, final WebRequest wr, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
-    if(AuthenticationHelper.isAnonymous()){
-      throw new UnauthorizedAccessException("Please login in order to be able to list resources.");
-    }
+    ControllerUtils.checkAnonymousAccess();
 
     if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
+      LOGGER.warn("Caller is not allowed to find users by example. ROLE_ADMINISTRATOR is required. Throwing AccessForbiddenException.");
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required.");
     }
 
-    int pageSize = pgbl.getPageSize();
-    if(pageSize > 100){
-      LOGGER.debug("Restricting user-provided page size {} to max. page size 100.", pageSize);
-      pageSize = 100;
-    }
-    LOGGER.debug("Rebuilding page request for page {}, size {} and sort {}.", pgbl.getPageNumber(), pageSize, pgbl.getSort());
-    PageRequest request = PageRequest.of(pgbl.getPageNumber(), pageSize, pgbl.getSort());
+    PageRequest request = ControllerUtils.checkPaginationInformation(pgbl);
+
     Page<RepoUser> page = userService.findAll(example, request);
-    if(pgbl.getPageNumber() > page.getTotalPages()){
-      LOGGER.debug("Requested page number {} is too large. Number of pages is: {}. Returning empty list.", pgbl.getPageNumber(), page.getTotalPages());
-    }
 
-    List<RepoUser> modUsers = json.use(JsonView.with(page.getContent())
-            .onClass(RepoUser.class, match().exclude("password")))
-            .returnValue();
+    filterAndAutoReturnRepoUsers(page.getContent());
 
-    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(RepoUser.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), pageSize));
-    //publish listing event??
-    return ResponseEntity.ok(modUsers);
+    eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(RepoUser.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), request.getPageSize()));
+
+    return ResponseEntity.ok().build();
   }
 
   @Override
-  public ResponseEntity patch(@PathVariable(value = "id") Long id, @RequestBody JsonPatch patch, WebRequest request, HttpServletResponse hsr
-  ){
-    if(AuthenticationHelper.isAnonymous()){
-      throw new UnauthorizedAccessException("Please login in order to be able to modify resources.");
-    }
-    Optional<RepoUser> result = userService.findById(id);
-    if(!result.isPresent()){
-      return ResponseEntity.notFound().build();
-    }
-    RepoUser user = result.get();
+  public ResponseEntity patch(@PathVariable(value = "id") Long id, @RequestBody JsonPatch patch, WebRequest request, HttpServletResponse hsr){
+    ControllerUtils.checkAnonymousAccess();
 
-    if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
+    RepoUser user = userService.findById(id);
+
+    if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to patch other users.");
     }
 
-    if(!request.checkNotModified(Integer.toString(user.hashCode()))){
-      throw new EtagMismatchException("ETag not matching, resource has changed.");
-    }
+    ControllerUtils.checkEtag(request, user);
 
-    RepoUser updated = PatchUtil.applyPatch(user, patch, RepoUser.class, AuthenticationHelper.getAuthentication().getAuthorities());
+    userService.patch(user, patch, AuthenticationHelper.getAuthentication().getAuthorities());
 
-    LOGGER.info("Persisting patched user.");
-    userService.update(updated);
-    LOGGER.info("User successfully persisted.");
     return ResponseEntity.noContent().build();
   }
 
   @Override
-  public ResponseEntity delete(@PathVariable(value = "id") Long id, WebRequest request, HttpServletResponse hsr
-  ){
-    if(AuthenticationHelper.isAnonymous()){
-      throw new UnauthorizedAccessException("Please login in order to be able to modify resources.");
-    }
+  public ResponseEntity delete(@PathVariable(value = "id") Long id, WebRequest request, HttpServletResponse hsr){
+    ControllerUtils.checkAnonymousAccess();
 
     if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       throw new UpdateForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required.");
     }
 
-    Optional<RepoUser> result = userService.findById(id);
-    if(result.isPresent()){
-      //user was found and caller has ADMIN role
-      RepoUser user = result.get();
-      if(!request.checkNotModified(Integer.toString(user.hashCode()))){
-        throw new EtagMismatchException("ETag not matching, resource has changed.");
-      }
-      if(user.getActive()){
-        LOGGER.debug("Deactivating user {}.", user.getUsername());
-        user.setActive(Boolean.FALSE);
-        userService.update(user);
-      } else{
-        LOGGER.debug("User {} is deactivated. Removing user.", user.getUsername());
-        userService.delete(user);
-      }
+    try{
+      RepoUser user = userService.findById(id);
+
+      ControllerUtils.checkEtag(request, user);
+
+      userService.delete(user);
+    } catch(ResourceNotFoundException ex){
+      //ignore
+      LOGGER.trace("User with id {} not found in DELETE. Ignoring exception.", id);
     }
 
     return ResponseEntity.noContent().build();
   }
+
+  private void filterAndAutoReturnRepoUser(RepoUser resource){
+    //transform and return JSON representation as next controller result
+    json.use(JsonView.with(resource)
+            .onClass(RepoUser.class, match().exclude("password")));
+  }
+
+  private void filterAndAutoReturnRepoUsers(List<RepoUser> resources){
+    //transform and return JSON representation as next controller result
+    json.use(JsonView.with(resources)
+            .onClass(RepoUser.class, match().exclude("password")));
+  }
+
 }

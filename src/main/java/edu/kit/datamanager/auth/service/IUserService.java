@@ -16,27 +16,47 @@
 package edu.kit.datamanager.auth.service;
 
 import edu.kit.datamanager.auth.domain.RepoUser;
-import java.util.Optional;
+import edu.kit.datamanager.exceptions.BadArgumentException;
+import edu.kit.datamanager.service.IGenericService;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetailsService;
 
 /**
  *
  * @author jejkal
  */
-public interface IUserService extends HealthIndicator, UserDetailsService{
+public interface IUserService extends IGenericService<RepoUser>, HealthIndicator, UserDetailsService{
 
-  public Page<RepoUser> findAll(RepoUser example, Pageable pgbl);
+  /**
+   * Create a new user using the provided template. This template should contain
+   * at least username and password. In addition, a list of roles can be
+   * provided. Implementations should decide, which roles can be provided by the
+   * caller. Typically, privileged roles, e.g. ROLE_ADMINISTRATOR, should not be
+   * allowed to be assigned during self-registration.
+   *
+   * Furthermore, the implementation must deal with duplicate usernames in an
+   * appropriate way, e.g. by throwing an according runtime exception mapped to
+   * a response code HTTP_CONFLICT.
+   *
+   * @param entity The user to create.
+   * @param callerIsAdmin TRUE if the caller is authenticated as ADMINISTRATOR,
+   * FALSE otherwise.
+   *
+   * @return The new resource with an id assigned.
+   *
+   * @throws BadArgumentException if a mandatory field is missing or has an
+   * invalid value.
+   */
+  RepoUser create(final RepoUser entity, boolean callerIsAdmin) throws BadArgumentException;
 
-  Optional<RepoUser> findById(final Long id);
+  /**
+   * Update the provided user in the data backend. This method can be used to
+   * perform a transparent update operation in the underlying database. It may
+   * or may not perform additional checks to the provided resource and should
+   * therefore be used internally only.
+   *
+   * @param user The user resource to update.
+   */
+  void update(RepoUser user);
 
-  RepoUser create(final RepoUser entity);
-
-  RepoUser update(final RepoUser entity);
-
-  void delete(final RepoUser entity);
-
-  long count();
 }

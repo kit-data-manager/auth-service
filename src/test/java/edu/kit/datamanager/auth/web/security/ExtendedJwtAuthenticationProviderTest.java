@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.auth.web.security;
 
+import com.github.fge.jsonpatch.JsonPatch;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.entities.RepoUserRole;
@@ -56,32 +57,31 @@ public class ExtendedJwtAuthenticationProviderTest{
     }
 
     @Override
-    public Optional<RepoUser> findById(Long id){
+    public RepoUser findById(Long id){
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public RepoUser create(RepoUser entity){
+    public RepoUser create(RepoUser entity, boolean isAdminAccess){
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public RepoUser update(RepoUser entity){
+    public void update(RepoUser entity){
       System.out.println("UPDATE " + entity);
       USER.setActive(entity.getActive());
       USER.setLocked(entity.getLocked());
       USER.setLockedUntil(entity.getLockedUntil());
       USER.setLoginFailures(entity.getLoginFailures());
-      return USER;
     }
 
     @Override
-    public void delete(RepoUser entity){
+    public void patch(RepoUser entity, JsonPatch patch, Collection<? extends GrantedAuthority> userGrants){
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public long count(){
+    public void delete(RepoUser entity){
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -97,6 +97,7 @@ public class ExtendedJwtAuthenticationProviderTest{
       }
       return null;
     }
+
   };
 
   @BeforeClass

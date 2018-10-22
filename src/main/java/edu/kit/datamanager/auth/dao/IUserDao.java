@@ -16,6 +16,7 @@
 package edu.kit.datamanager.auth.dao;
 
 import edu.kit.datamanager.auth.domain.RepoUser;
+import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -25,6 +26,13 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  */
 public interface IUserDao extends JpaRepository<RepoUser, Long>, JpaSpecificationExecutor<RepoUser>{
 
-  public RepoUser findByUsername(String username);
+  /**
+   * Find a user by username.
+   *
+   * @param username The username.
+   *
+   * @return An optional of type RepoUser.
+   */
+  public Optional<RepoUser> findByUsername(String username);
 
 }

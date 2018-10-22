@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import edu.kit.datamanager.annotations.Searchable;
 import edu.kit.datamanager.annotations.SecureUpdate;
+import edu.kit.datamanager.entities.EtagSupport;
 import io.swagger.annotations.ApiModel;
 import java.io.Serializable;
 import java.util.HashSet;
@@ -40,8 +41,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.collections4.Predicate;
-import org.hibernate.annotations.CascadeType;
-import org.hibernate.annotations.Fetch;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -55,7 +54,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @JsonInclude(Include.NON_NULL)
-public class RepoUserGroup implements Serializable{
+public class RepoUserGroup implements EtagSupport, Serializable{
 
   public enum GroupRole{
     GROUP_MANAGER("ROLE_GROUP_MANAGER"),
@@ -139,6 +138,10 @@ public class RepoUserGroup implements Serializable{
     }
 
     return GroupRole.NO_MEMBER;
+  }
+
+  public String getEtag(){
+    return Integer.toString(hashCode());
   }
 
 }

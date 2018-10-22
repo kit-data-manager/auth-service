@@ -15,18 +15,33 @@
  */
 package edu.kit.datamanager.auth.service.impl;
 
+import com.github.fge.jsonpatch.JsonPatch;
 import edu.kit.datamanager.auth.dao.IGroupDao;
+import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.auth.service.IGroupService;
+import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.dao.ByExampleSpecification;
+import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.AccessForbiddenException;
+import edu.kit.datamanager.exceptions.BadArgumentException;
+import edu.kit.datamanager.exceptions.CustomInternalServerError;
+import edu.kit.datamanager.exceptions.PatchApplicationException;
+import edu.kit.datamanager.exceptions.ResourceNotFoundException;
+import edu.kit.datamanager.exceptions.UpdateForbiddenException;
+import edu.kit.datamanager.util.AuthenticationHelper;
+import edu.kit.datamanager.util.PatchUtil;
+import java.util.Collection;
 import java.util.Optional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +55,11 @@ public class RepoUserGroupService implements IGroupService{
 
   @Autowired
   private IGroupDao dao;
+  @Autowired
+  private IUserService userService;
 
+  @Autowired
+  private Logger logger;
   @PersistenceContext
   private EntityManager em;
   // private final Javers javers;
@@ -57,34 +76,70 @@ public class RepoUserGroupService implements IGroupService{
 
   @Override
   public Page<RepoUserGroup> findAll(RepoUserGroup example, Pageable pgbl){
+    logger.trace("Performing findAll({}, {}).", example, pgbl);
     if(example != null){
+      logger.trace("Example provided, using example spec and calling findAll(spec, pgbl)");
       Specification<RepoUserGroup> spec = Specification.where(new ByExampleSpecification(em).byExample(example));
       return getDao().findAll(spec, pgbl);
     } else{
+      logger.trace("No example provided, using no spec and calling findAll(pgbl).");
       return getDao().findAll(pgbl);
     }
   }
 
   @Override
-  @Transactional(readOnly = true)
-  public Optional<RepoUserGroup> findById(Long id){
-    //QueryBuilder jqlQuery = QueryBuilder.byClass(RepoUserGroup.class).byInstanceId(id, RepoUserGroup.class).withScopeDeepPlus().withVersion(5);
-//
-    //List<Shadow<RepoUserGroup>> shadows = javers.findShadows(jqlQuery.build());
-//    System.out.println(" SIZE " + shadows.size());
-//    shadows.forEach((shadow) -> {
-//      System.out.println("Shadow: " + shadow.getCommitMetadata() + ": " + shadow.get());
-//      System.out.println("Members: " + shadow.get().getMemberships().size());
-//    });
-//    return Optional.of(shadows.get(0).get());
-    return getDao().findById(id);
+  public Page<RepoUserGroup> findAll(RepoUserGroup example, Pageable pgbl, boolean callerIsAdmin){
+    Page<RepoUserGroup> page;
+    if(callerIsAdmin){
+      //do find all
+      page = findAll(example, pgbl);
+    } else{
+      //query based on membership
+      page = findByMembershipsUserUsernameEqualsAndMembershipsRoleGreaterThanEqualAndActiveTrue((String) AuthenticationHelper.getAuthentication().getPrincipal(), RepoUserGroup.GroupRole.GROUP_MEMBER, pgbl);
+    }
+    return page;
   }
 
   @Override
-  public RepoUserGroup create(RepoUserGroup entity){
-    RepoUserGroup group = getDao().saveAndFlush(entity);
-    // javers.commit(AuthenticationHelper.getPrincipal(), group);
-    return group;
+  @Transactional(readOnly = true)
+  public RepoUserGroup findById(Long id){
+    logger.trace("Performing findById({}).", id);
+    Optional<RepoUserGroup> result = getDao().findById(id);
+
+    if(!result.isPresent()){
+      logger.error("No user group found for identifier {}. Throwing ResourceNotFoundException.", id);
+      throw new ResourceNotFoundException("Group with id " + id + " was not found.");
+    }
+
+    return result.get();
+  }
+
+  @Override
+  public RepoUserGroup create(RepoUserGroup group, String caller){
+    logger.trace("Performing create({}, {}).", group, caller);
+    group.setId(null);
+    logger.trace("Checking group name.");
+    if(group.getGroupname() == null){
+      logger.error("Group name not provided. Throwing BadArgumentException.");
+      throw new BadArgumentException("No groupname assigned to provided user.");
+    } else{
+      //enforce uppercase groupname
+      logger.trace("Enforcing lowercase groupname.");
+      group.setGroupname(group.getGroupname());
+    }
+
+    logger.trace("Checking membership information for caller with principal {}.", caller);
+    RepoUser theUser = (RepoUser) userService.loadUserByUsername(caller);
+    if(theUser == null){
+      //this should only happen if the caller is no 'real' user, e.g. while creating groups using a service token.
+      //@TODO check if this scenario makes sense.
+      logger.error("No user found for principal {}, probably this is an attempt to create groups using a service token. Throwing AccessForbiddenException.");
+      throw new AccessForbiddenException("Creating group with caller principal '" + caller + "' is not allowed.");
+    }
+    logger.trace("Calling group.addOrUpdateMembership({}, {}).", "RepoUser#" + theUser.getId(), RepoUserGroup.GroupRole.GROUP_MANAGER);
+    group.addOrUpdateMembership(theUser, RepoUserGroup.GroupRole.GROUP_MANAGER);
+    logger.trace("Persisting and returning group {}.", group);
+    return getDao().save(group);
   }
 
   @Override
@@ -95,8 +150,19 @@ public class RepoUserGroupService implements IGroupService{
   }
 
   @Override
-  public void delete(RepoUserGroup entity){
-    getDao().delete(entity);
+  public void delete(RepoUserGroup group){
+    logger.trace("Performing delete({}).", "RepoUserGroup#" + group.getId());
+    if(group.getActive()){
+      logger.debug("Deactivating group {}.", group.getGroupname());
+      group.setActive(Boolean.FALSE);
+      logger.trace("Persisting deactivated group.");
+      getDao().save(group);
+      logger.trace("Resource successfully persisted.");
+    } else{
+      logger.trace("Group {} is deactivated. Removing group.", group.getGroupname());
+      getDao().delete(group);
+      logger.trace("Resource successfully removed.");
+    }
   }
 
   @Override
@@ -106,5 +172,14 @@ public class RepoUserGroupService implements IGroupService{
 
   protected IGroupDao getDao(){
     return dao;
+  }
+
+  @Override
+  public void patch(RepoUserGroup entity, JsonPatch patch, Collection<? extends GrantedAuthority> userGrants) throws PatchApplicationException, UpdateForbiddenException{
+    logger.trace("Performing patch({}, {}, {}).", "RepoUserGroup#" + entity.getId(), patch, userGrants);
+    RepoUserGroup updated = PatchUtil.applyPatch(entity, patch, RepoUserGroup.class, userGrants);
+    logger.trace("Patch successfully applied. Persisting patched resource.");
+    getDao().save(updated);
+    logger.trace("Resource successfully persisted.");
   }
 }
