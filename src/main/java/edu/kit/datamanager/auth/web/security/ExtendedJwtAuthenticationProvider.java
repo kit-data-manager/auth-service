@@ -90,7 +90,7 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     claims.put("firstname", user.getFirstname());
     claims.put("lastname", user.getLastname());
     claims.put("email", user.getEmail());
-    claims.put("activeGroup", groupId);
+    claims.put("groupid", groupId);
 
     Set<String> rolesAsString = new HashSet<>();
     user.getRolesAsEnum().forEach((role) -> {

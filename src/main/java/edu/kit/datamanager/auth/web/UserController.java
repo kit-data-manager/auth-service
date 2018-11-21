@@ -107,10 +107,10 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<RepoUser> getById(@PathVariable(value = "id") Long id, WebRequest request, HttpServletResponse response){
+  public ResponseEntity<RepoUser> getById(@PathVariable(value = "id") String id, WebRequest request, HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
-    RepoUser user = userService.findById(id);
+    RepoUser user = userService.findById(ControllerUtils.parseIdToLong(id));
 
     if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())){
       LOGGER.warn("Caller {} is not allowed to request users by id. Only the user himself or users with ROLE_ADMINISTRATOR are allowed to read user details. Throwing AccessForbiddenException.", user.getUsername());
@@ -148,10 +148,10 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity patch(@PathVariable(value = "id") Long id, @RequestBody JsonPatch patch, WebRequest request, HttpServletResponse hsr){
+  public ResponseEntity patch(@PathVariable(value = "id") String id, @RequestBody JsonPatch patch, WebRequest request, HttpServletResponse hsr){
     ControllerUtils.checkAnonymousAccess();
 
-    RepoUser user = userService.findById(id);
+    RepoUser user = userService.findById(ControllerUtils.parseIdToLong(id));
 
     if(!AuthenticationHelper.isPrincipal(user.getUsername()) && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to patch other users.");
@@ -165,7 +165,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity delete(@PathVariable(value = "id") Long id, WebRequest request, HttpServletResponse hsr){
+  public ResponseEntity delete(@PathVariable(value = "id") String id, WebRequest request, HttpServletResponse hsr){
     ControllerUtils.checkAnonymousAccess();
 
     if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
@@ -173,7 +173,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
     }
 
     try{
-      RepoUser user = userService.findById(id);
+      RepoUser user = userService.findById(ControllerUtils.parseIdToLong(id));
 
       ControllerUtils.checkEtag(request, user);
 

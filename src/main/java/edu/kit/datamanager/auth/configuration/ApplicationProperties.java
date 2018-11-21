@@ -15,8 +15,8 @@
  */
 package edu.kit.datamanager.auth.configuration;
 
+import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
@@ -24,9 +24,6 @@ import org.springframework.stereotype.Component;
  * @author jejkal
  */
 @Component
-@ConfigurationProperties("auth")
 @Data
-public class ApplicationProperties{
-
-  private String jwtSecret;
+public class ApplicationProperties extends GenericApplicationProperties{
 }
