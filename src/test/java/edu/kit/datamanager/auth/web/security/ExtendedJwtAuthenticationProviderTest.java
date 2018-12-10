@@ -23,7 +23,6 @@ import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Optional;
 import org.apache.commons.collections4.CollectionUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -57,7 +56,7 @@ public class ExtendedJwtAuthenticationProviderTest{
     }
 
     @Override
-    public RepoUser findById(Long id){
+    public RepoUser findById(String id){
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -68,7 +67,6 @@ public class ExtendedJwtAuthenticationProviderTest{
 
     @Override
     public void update(RepoUser entity){
-      System.out.println("UPDATE " + entity);
       USER.setActive(entity.getActive());
       USER.setLocked(entity.getLocked());
       USER.setLockedUntil(entity.getLockedUntil());

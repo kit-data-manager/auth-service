@@ -254,7 +254,7 @@ public class GroupControllerTest{
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/groupname\",\"value\": \"test1\"}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("other:other".getBytes())).header("If-None-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("other:other".getBytes())).header("If-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isForbidden());
   }
 
   @Test
@@ -264,7 +264,7 @@ public class GroupControllerTest{
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/groupname\",\"value\": \"test1\"}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-None-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isNoContent());
 
     this.mockMvc.perform(get("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("test1".toUpperCase())).andExpect(header().exists("ETag"));
@@ -278,7 +278,7 @@ public class GroupControllerTest{
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/id\",\"value\": 4}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isForbidden());
   }
 
   @Test
@@ -288,7 +288,7 @@ public class GroupControllerTest{
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/groupname\",\"value\": \"changedName\"}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andExpect(status().isNoContent());
 
     this.mockMvc.perform(get("/api/v1/groups/" + otherGroup.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.groupname").value("changedName".toUpperCase())).andExpect(header().exists("ETag"));
@@ -301,14 +301,14 @@ public class GroupControllerTest{
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/unknownProperty\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isUnprocessableEntity());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andExpect(status().isUnprocessableEntity());
   }
 
   @Test
   public void testPatchGroupWithWrongETag() throws Exception{
     String patch = "[{\"op\": \"replace\",\"path\": \"/groupname\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/groups/" + otherGroup.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", "\"invalid\"")).andExpect(status().isPreconditionFailed());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", "\"invalid\"")).andExpect(status().isPreconditionFailed());
   }
 
   @Test
@@ -370,7 +370,7 @@ public class GroupControllerTest{
 
     //call patch
     this.mockMvc.perform(patch("/api/v1/groups/" + groupId).contentType("application/json-patch+json").content(mapper.writeValueAsString(patch_add)).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andExpect(status().isNoContent());
 
     //check for added membership
     this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
@@ -385,7 +385,7 @@ public class GroupControllerTest{
 
     //call patch
     this.mockMvc.perform(patch("/api/v1/groups/" + Long.toString(groupId)).contentType("application/json-patch+json").content(mapper.writeValueAsString(patch_remove)).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andExpect(status().isNoContent());
 
     //check for added membership
     this.mockMvc.perform(get("/api/v1/groups/" + Long.toString(groupId)).header(HttpHeaders.AUTHORIZATION,
@@ -414,7 +414,7 @@ public class GroupControllerTest{
             "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
     this.mockMvc.perform(delete("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-Match", etag)).andExpect(status().isNoContent());
 
     this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andExpect(status().isNotFound());
@@ -425,7 +425,7 @@ public class GroupControllerTest{
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
     this.mockMvc.perform(delete("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andExpect(status().isNoContent());
 
     this.mockMvc.perform(get("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isNotFound());
@@ -466,7 +466,7 @@ public class GroupControllerTest{
             "Basic " + Base64Utils.encodeToString("other:other".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
 
     this.mockMvc.perform(delete("/api/v1/groups/" + groupId).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("other:other".getBytes())).header("If-None-Match", etag)).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("other:other".getBytes())).header("If-Match", etag)).andExpect(status().isForbidden());
   }
 
   @Test

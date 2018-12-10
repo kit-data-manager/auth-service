@@ -237,7 +237,7 @@ public class UserControllerTest{
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
     String patch = "[{\"op\": \"replace\",\"path\": \"/id\",\"value\": 2}]";
     this.mockMvc.perform(patch("/api/v1/users/" + adminUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andDo(print()).andExpect(status().isForbidden());
   }
 
   @Test
@@ -254,7 +254,7 @@ public class UserControllerTest{
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + defaultUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-Match", etag)).andDo(print()).andExpect(status().isForbidden());
   }
 
   @Test
@@ -265,7 +265,7 @@ public class UserControllerTest{
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
     //patching username is also not allowed for admin
     this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andExpect(status().isForbidden());
   }
 
   @Test
@@ -279,7 +279,7 @@ public class UserControllerTest{
   public void testPatchWithWrongEtag() throws Exception{
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", "fail")).andExpect(status().isPreconditionFailed());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", "fail")).andExpect(status().isPreconditionFailed());
   }
 
   @Test
@@ -288,7 +288,7 @@ public class UserControllerTest{
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + defaultUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isForbidden());
+            "Basic " + Base64Utils.encodeToString("user:user".getBytes())).header("If-Match", etag)).andDo(print()).andExpect(status().isForbidden());
 
     this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("user"));
@@ -301,7 +301,7 @@ public class UserControllerTest{
 
     String patch = "[{\"op\": \"replace\",\"path\": \"/unknownProperty\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isUnprocessableEntity());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andDo(print()).andExpect(status().isUnprocessableEntity());
   }
 
   @Test
@@ -315,7 +315,7 @@ public class UserControllerTest{
     String etag = this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
     this.mockMvc.perform(delete("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent());
     this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.active").value("false"));
 
@@ -323,7 +323,7 @@ public class UserControllerTest{
     etag = this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isOk()).andReturn().getResponse().getHeader("ETag");
     this.mockMvc.perform(delete("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", etag)).andDo(print()).andExpect(status().isNoContent());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent());
     this.mockMvc.perform(get("/api/v1/users/" + defaultUser.getId()).header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isNotFound());
   }
@@ -337,7 +337,7 @@ public class UserControllerTest{
   @Test
   public void testDeleteUserWithWrong() throws Exception{
     this.mockMvc.perform(delete("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-None-Match", "fail")).andDo(print()).andExpect(status().isPreconditionFailed());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).header("If-Match", "fail")).andDo(print()).andExpect(status().isPreconditionFailed());
   }
 
   @Test

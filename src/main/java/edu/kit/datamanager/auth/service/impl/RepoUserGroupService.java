@@ -22,14 +22,13 @@ import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.dao.ByExampleSpecification;
-import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.exceptions.BadArgumentException;
-import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.PatchApplicationException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.util.AuthenticationHelper;
+import edu.kit.datamanager.util.ControllerUtils;
 import edu.kit.datamanager.util.PatchUtil;
 import java.util.Collection;
 import java.util.Optional;
@@ -102,9 +101,10 @@ public class RepoUserGroupService implements IGroupService{
 
   @Override
   @Transactional(readOnly = true)
-  public RepoUserGroup findById(Long id){
+  public RepoUserGroup findById(String id){
     logger.trace("Performing findById({}).", id);
-    Optional<RepoUserGroup> result = getDao().findById(id);
+    long lId = ControllerUtils.parseIdToLong(id);
+    Optional<RepoUserGroup> result = getDao().findById(lId);
 
     if(!result.isPresent()){
       logger.error("No user group found for identifier {}. Throwing ResourceNotFoundException.", id);

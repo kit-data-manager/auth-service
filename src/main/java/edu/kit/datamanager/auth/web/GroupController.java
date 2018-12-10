@@ -94,7 +94,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   public ResponseEntity<RepoUserGroup> getById(@PathVariable("id") final String id, WebRequest request, final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
-    RepoUserGroup group = userGroupService.findById(ControllerUtils.parseIdToLong(id));
+    RepoUserGroup group = userGroupService.findById(id);
 
     if(!group.getActive() && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       LOGGER.warn("Access to inactive group with id {} requested by principal {} w/o ADMINISTRATOR privileges. Throwing ResourceNotFoundException.", id, AuthenticationHelper.getPrincipal());
@@ -140,7 +140,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   public ResponseEntity patch(@PathVariable("id") final String id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
     
-    RepoUserGroup group = userGroupService.findById(ControllerUtils.parseIdToLong(id));
+    RepoUserGroup group = userGroupService.findById(id);
 
     RepoUserGroup.GroupRole role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());
     boolean adminAccess = false;
@@ -179,7 +179,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
     ControllerUtils.checkAnonymousAccess();
 
     try{
-      RepoUserGroup group = userGroupService.findById(ControllerUtils.parseIdToLong(id));
+      RepoUserGroup group = userGroupService.findById(id);
       RepoUserGroup.GroupRole role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());
       if(!GroupRole.GROUP_MANAGER.equals(role)){
         //check admin access
