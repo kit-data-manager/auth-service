@@ -20,6 +20,7 @@ import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
+import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -94,6 +95,11 @@ public class ExtendedJwtAuthenticationProviderTest{
         return USER;
       }
       return null;
+    }
+
+    @Override
+    public RepoUser put(RepoUser c, RepoUser c1, Collection<? extends GrantedAuthority> clctn) throws UpdateForbiddenException{
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
   };

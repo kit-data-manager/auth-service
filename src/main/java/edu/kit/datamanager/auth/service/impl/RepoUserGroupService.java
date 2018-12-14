@@ -24,6 +24,7 @@ import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.dao.ByExampleSpecification;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.exceptions.BadArgumentException;
+import edu.kit.datamanager.exceptions.FeatureNotImplementedException;
 import edu.kit.datamanager.exceptions.PatchApplicationException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
@@ -181,5 +182,10 @@ public class RepoUserGroupService implements IGroupService{
     logger.trace("Patch successfully applied. Persisting patched resource.");
     getDao().save(updated);
     logger.trace("Resource successfully persisted.");
+  }
+
+  @Override
+  public RepoUserGroup put(RepoUserGroup c, RepoUserGroup c1, Collection<? extends GrantedAuthority> clctn) throws UpdateForbiddenException{
+    throw new FeatureNotImplementedException("PUT is not supported for group resouces.");
   }
 }

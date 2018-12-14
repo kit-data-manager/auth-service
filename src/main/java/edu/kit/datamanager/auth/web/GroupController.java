@@ -38,6 +38,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.WebRequest;
 import edu.kit.datamanager.controller.IGenericResourceController;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.FeatureNotImplementedException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
@@ -139,7 +140,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   @Override
   public ResponseEntity patch(@PathVariable("id") final String id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
-    
+
     RepoUserGroup group = userGroupService.findById(id);
 
     RepoUserGroup.GroupRole role = group.getUserRole((String) AuthenticationHelper.getAuthentication().getPrincipal());
@@ -208,5 +209,10 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   private void filterAndAutoReturnUserGroups(List<RepoUserGroup> groups){
     json.use(JsonView.with(groups)
             .onClass(RepoUser.class, match().exclude("*").include("username").include("id")));
+  }
+
+  @Override
+  public ResponseEntity put(String string, RepoUserGroup c, WebRequest wr, HttpServletResponse hsr){
+    throw new FeatureNotImplementedException("PUT is not supported for group resouces.");
   }
 }

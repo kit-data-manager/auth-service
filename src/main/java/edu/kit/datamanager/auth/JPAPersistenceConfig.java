@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = "edu.kit.datamanager.auth")
-@EntityScan(basePackages = {"edu.kit.datamanager.auth.domain"})
+@EntityScan(basePackages = {"edu.kit.datamanager.auth.domain", "edu.kit.datamanager.entities"})
 public class JPAPersistenceConfig{
+
 }

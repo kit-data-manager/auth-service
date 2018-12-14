@@ -22,7 +22,9 @@ import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.BadArgumentException;
+import edu.kit.datamanager.exceptions.FeatureNotImplementedException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
+import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.util.ControllerUtils;
 import edu.kit.datamanager.util.PatchUtil;
 import java.util.Arrays;
@@ -191,5 +193,10 @@ public class RepoUserService implements IUserService{
   @Override
   public Health health(){
     return Health.up().withDetail("Users", dao.count()).build();
+  }
+
+  @Override
+  public RepoUser put(RepoUser c, RepoUser c1, Collection<? extends GrantedAuthority> clctn) throws UpdateForbiddenException{
+    throw new FeatureNotImplementedException("PUT is not supported for user resouces.");
   }
 }

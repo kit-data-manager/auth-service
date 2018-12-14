@@ -27,6 +27,7 @@ import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.controller.hateoas.event.PaginatedResultsRetrievedEvent;
 import edu.kit.datamanager.controller.IGenericResourceController;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.FeatureNotImplementedException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
@@ -196,6 +197,11 @@ public class UserController implements IGenericResourceController<RepoUser>{
     //transform and return JSON representation as next controller result
     json.use(JsonView.with(resources)
             .onClass(RepoUser.class, match().exclude("password")));
+  }
+
+  @Override
+  public ResponseEntity put(String string, RepoUser c, WebRequest wr, HttpServletResponse hsr){
+    throw new FeatureNotImplementedException("PUT is not supported for user resouces.");
   }
 
 }

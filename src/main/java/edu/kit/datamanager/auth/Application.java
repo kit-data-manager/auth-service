@@ -21,6 +21,8 @@ import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.auth.service.impl.RepoUserService;
 import edu.kit.datamanager.auth.service.impl.RepoUserGroupService;
+import edu.kit.datamanager.service.IMessagingService;
+import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -47,7 +49,7 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
  * @author jejkal
  */
 @SpringBootApplication
-@ComponentScan(basePackages = {"edu.kit.datamanager"})
+@ComponentScan(basePackages = {"edu.kit.datamanager", "edu.kit.datamanager.messaging.client"})
 public class Application{
 
   @Autowired
@@ -63,29 +65,33 @@ public class Application{
   }
 
   @Bean
-  @ConfigurationProperties("auth")
+  @ConfigurationProperties("repo")
   public ApplicationProperties applicationProperties(){
     return new ApplicationProperties();
   }
 
+//  @Bean
+//  public ConnectionFactory connectionFactory(){
+//    return new CachingConnectionFactory("localhost");
+//  }
+//
+//  @Bean
+//  public AmqpAdmin amqpAdmin(){
+//    return new RabbitAdmin(connectionFactory());
+//  }
+//
+//  @Bean
+//  public RabbitTemplate rabbitTemplate(){
+//    return new RabbitTemplate(connectionFactory());
+//  }
+//
+//  @Bean
+//  TopicExchange exchange(){
+//    return new TopicExchange("topic_note");
+//  }
   @Bean
-  public ConnectionFactory connectionFactory(){
-    return new CachingConnectionFactory("localhost");
-  }
-
-  @Bean
-  public AmqpAdmin amqpAdmin(){
-    return new RabbitAdmin(connectionFactory());
-  }
-
-  @Bean
-  public RabbitTemplate rabbitTemplate(){
-    return new RabbitTemplate(connectionFactory());
-  }
-
-  @Bean
-  TopicExchange exchange(){
-    return new TopicExchange("topic_note");
+  public IMessagingService messagingService(){
+    return new RabbitMQMessagingService();
   }
 
   @Bean
@@ -118,7 +124,6 @@ public class Application{
 //  public Queue myQueue(){
 //    return new Queue("myqueue");
 //  }
-
   public static void main(String[] args){
     ApplicationContext ctx = SpringApplication.run(Application.class, args);
   }
