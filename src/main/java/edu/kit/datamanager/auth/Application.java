@@ -70,25 +70,6 @@ public class Application{
     return new ApplicationProperties();
   }
 
-//  @Bean
-//  public ConnectionFactory connectionFactory(){
-//    return new CachingConnectionFactory("localhost");
-//  }
-//
-//  @Bean
-//  public AmqpAdmin amqpAdmin(){
-//    return new RabbitAdmin(connectionFactory());
-//  }
-//
-//  @Bean
-//  public RabbitTemplate rabbitTemplate(){
-//    return new RabbitTemplate(connectionFactory());
-//  }
-//
-//  @Bean
-//  TopicExchange exchange(){
-//    return new TopicExchange("topic_note");
-//  }
   @Bean
   public IMessagingService messagingService(){
     return new RabbitMQMessagingService();
