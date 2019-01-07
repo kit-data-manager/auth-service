@@ -115,8 +115,8 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
 
   protected RepoUser getUser(Authentication authentication){
     RepoUser theUser = (RepoUser) userService.loadUserByUsername(authentication.getName());
-    if(!theUser.isEnabled()){
-      LOGGER.warn("User " + theUser.getUsername() + " is disabled. Falling back to anonymous access.");
+    if(theUser == null || !theUser.isEnabled()){
+      LOGGER.warn("User " + authentication.getName() + " is disabled. Falling back to anonymous access.");
       throw new InvalidAuthenticationException("Access denied.");
     }
     String password = theUser.getPassword();

@@ -90,7 +90,7 @@ public class RepoUserService implements IUserService{
     } else{
       logger.trace("Checking for self-registering with privileged roles.");
       //if user contains ADMINISTRATOR role check for admin access
-      user.getRolesAsEnum().stream().filter((role) -> (role.ordinal() <= RepoUserRole.ADMINISTRATOR.ordinal() && !callerIsAdmin)).forEachOrdered((_item) -> {
+      user.getRolesAsEnum().stream().filter((role) -> (role.ordinal() >= RepoUserRole.ADMINISTRATOR.ordinal() && !callerIsAdmin)).forEachOrdered((_item) -> {
         logger.error("Creating users with privileged roles is only permitted for users with ROLE_ADMINISTRATOR. Throwing BadArgumentException.");
         throw new BadArgumentException("Self-registration with privileged roles not allowed.");
       });
