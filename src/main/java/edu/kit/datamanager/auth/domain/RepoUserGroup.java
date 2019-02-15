@@ -97,7 +97,11 @@ public class RepoUserGroup implements EtagSupport, Serializable{
   @SecureUpdate({"FORBIDDEN"})
   @Searchable
   private Long id;
+  @Searchable
+  @SecureUpdate({"FORBIDDEN"})
   @Column(nullable = false, unique = true)
+  private String groupId;
+  @Column(nullable = false)
   @Searchable
   @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
   private String groupname;
@@ -108,9 +112,9 @@ public class RepoUserGroup implements EtagSupport, Serializable{
   @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
   private Set<GroupMembership> memberships = new HashSet<>();
 
-  public void setGroupname(String groupname){
-    if(groupname != null){
-      this.groupname = groupname.toUpperCase();
+  public void getGRoupId(String groupId){
+    if(groupId != null){
+      this.groupId = groupId.toUpperCase();
     }
   }
 
@@ -127,12 +131,7 @@ public class RepoUserGroup implements EtagSupport, Serializable{
   }
 
   public final GroupRole getUserRole(final String userName){
-    GroupMembership membership = IteratorUtils.find(memberships.iterator(), new Predicate<GroupMembership>(){
-      @Override
-      public boolean evaluate(GroupMembership t){
-        return userName.equals(t.getUser().getUsername());
-      }
-    });
+    GroupMembership membership = IteratorUtils.find(memberships.iterator(), (GroupMembership t) -> userName.equals(t.getUser().getUsername()));
     if(membership != null){
       return membership.getRole();
     }
@@ -140,6 +139,8 @@ public class RepoUserGroup implements EtagSupport, Serializable{
     return GroupRole.NO_MEMBER;
   }
 
+  @JsonIgnore
+  @Override
   public String getEtag(){
     return Integer.toString(hashCode());
   }

@@ -1,0 +1,24 @@
+[source,options="nowrap"]
+----
+Header:
+
+{
+  "alg": "HS512"
+}
+
+Payload:
+
+{
+  "username": "jdoe",
+  "firstname": "John",
+  "lastname": "Doe",
+  "email": "john.doe@example.com",
+  "groupid": "USERS",
+  "roles": "[\"ROLE_USER\",\"ROLE_ADMINISTRATOR\"]",
+  "exp": 1550154018
+}
+
+Signature:
+
+HMACSHA512(base64UrlEncode(header) + "." + base64UrlEncode(payload), <SHARED_SECRET>)
+----

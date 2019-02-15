@@ -88,13 +88,24 @@ public class RepoUserService implements IUserService{
       //first user, add ADMINISTRATOR role
       user.addRole(RepoUserRole.ADMINISTRATOR);
     } else{
-      logger.trace("Checking for self-registering with privileged roles.");
-      //if user contains ADMINISTRATOR role check for admin access
-      user.getRolesAsEnum().stream().filter((role) -> (role.ordinal() >= RepoUserRole.ADMINISTRATOR.ordinal() && !callerIsAdmin)).forEachOrdered((_item) -> {
-        logger.error("Creating users with privileged roles is only permitted for users with ROLE_ADMINISTRATOR. Throwing BadArgumentException.");
-        throw new BadArgumentException("Self-registration with privileged roles not allowed.");
-      });
+      if(!callerIsAdmin){
+        logger.trace("Checking for self-registering with privileged roles.");
+        //if user contains ADMINISTRATOR role check for admin access
+        user.getRolesAsEnum().stream().filter((role) -> (role.ordinal() >= RepoUserRole.ADMINISTRATOR.ordinal() && !callerIsAdmin)).forEachOrdered((_item) -> {
+          logger.error("Creating users with privileged roles is only permitted for users with ROLE_ADMINISTRATOR. Throwing BadArgumentException.");
+          throw new BadArgumentException("Self-registration with privileged roles not allowed.");
+        });
+      } else{
+        logger.trace("Skipping role check due to admin call.");
+      }
     }
+
+    if(user.getRolesAsEnum().isEmpty()){
+      logger.trace("No role assigned to user. Adding default role {}.", RepoUserRole.USER);
+      user.addRole(RepoUserRole.USER);
+    }
+
+    user.setLoginFailures(0);
 
     //encode password
     logger.trace("Encoding user-provided password before persisting user to database.");

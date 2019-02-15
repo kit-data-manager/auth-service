@@ -223,6 +223,7 @@ public class RepoUser implements UserDetails, EtagSupport{
   }
 
   @Override
+  @JsonIgnore
   public String getEtag(){
     //remember password
     String tmpPwd = getPassword();

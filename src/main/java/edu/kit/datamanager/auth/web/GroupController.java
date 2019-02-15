@@ -88,7 +88,9 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
 
     RepoUserGroup newGroup = userGroupService.create(group, (String) AuthenticationHelper.getPrincipal());
 
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(Long.toString(newGroup.getId()), request, response)).toUri()).eTag("\"" + newGroup.getEtag() + "\"").body(newGroup);
+    filterAndAutoReturnUserGroup(newGroup);
+    
+    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(Long.toString(newGroup.getId()), request, response)).toUri()).eTag("\"" + newGroup.getEtag() + "\"").build();
   }
 
   @Override

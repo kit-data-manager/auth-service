@@ -120,13 +120,18 @@ public class RepoUserGroupService implements IGroupService{
     logger.trace("Performing create({}, {}).", group, caller);
     group.setId(null);
     logger.trace("Checking group name.");
-    if(group.getGroupname() == null){
-      logger.error("Group name not provided. Throwing BadArgumentException.");
-      throw new BadArgumentException("No groupname assigned to provided user.");
+    if(group.getGroupId() == null){
+      logger.error("Group id not provided. Throwing BadArgumentException.");
+      throw new BadArgumentException("No groupId assigned to provided group.");
     } else{
       //enforce uppercase groupname
-      logger.trace("Enforcing lowercase groupname.");
-      group.setGroupname(group.getGroupname());
+      logger.trace("Enforcing uppercase groupId.");
+      group.setGroupId(group.getGroupId().toUpperCase());
+    }
+
+    if(group.getGroupname() == null){
+      logger.error("Group name not provided. Throwing BadArgumentException.");
+      throw new BadArgumentException("No groupname assigned to provided group.");
     }
 
     logger.trace("Checking membership information for caller with principal {}.", caller);
@@ -154,13 +159,13 @@ public class RepoUserGroupService implements IGroupService{
   public void delete(RepoUserGroup group){
     logger.trace("Performing delete({}).", "RepoUserGroup#" + group.getId());
     if(group.getActive()){
-      logger.debug("Deactivating group {}.", group.getGroupname());
+      logger.debug("Deactivating group {}.", group.getGroupId());
       group.setActive(Boolean.FALSE);
       logger.trace("Persisting deactivated group.");
       getDao().save(group);
       logger.trace("Resource successfully persisted.");
     } else{
-      logger.trace("Group {} is deactivated. Removing group.", group.getGroupname());
+      logger.trace("Group {} is deactivated. Removing group.", group.getGroupId());
       getDao().delete(group);
       logger.trace("Resource successfully removed.");
     }

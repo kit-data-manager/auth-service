@@ -15,6 +15,7 @@ plugins {
    id "org.owasp.dependencycheck" version "3.1.2"
    id "org.ajoberstar.grgit" version "2.0.1"
    id "com.jfrog.bintray" version "1.7.3"
+   id "org.asciidoctor.convert" version "1.5.3"
 }
 
 apply plugin: 'java'
@@ -42,15 +43,16 @@ configurations {
    all*.exclude module : 'spring-boot-starter-logging'
 }
 
+if (project.hasProperty('travis')) {
+   println 'Using travis profile for building ' + project.getName()
+   apply from: 'gradle/profile-travis.gradle'
+} else if (project.hasProperty('release')) {
+   println 'Using release profile for building ' + project.getName()
+   apply from: 'gradle/profile-release.gradle'   
+}
+
 dependencies {
-   //compile("org.springframework.boot:spring-boot-starter")
-   //compile("org.springframework.boot:spring-boot-starter-data-rest")
-   // compile("org.springframework.boot:spring-boot-starter-web")
-   //compile("org.springframework.boot:spring-boot-starter-security")
-   //compile("org.springframework.boot:spring-boot-starter-actuator")
-   //compile("org.springframework.boot:spring-boot-starter-data-jpa")
-   // compile("org.springframework.security:spring-security-config")
-   // compile("org.springframework.boot:spring-boot-starter-data-jpa")
+  
    compile("org.springframework.boot:spring-boot-starter-data-rest")
    compile("org.springframework:spring-context-support")
    compile("org.springframework.boot:spring-boot-starter-amqp")
@@ -75,15 +77,4 @@ dependencies {
 lombok {
    version = '1.18.4'
    sha256 = ""
-}
-
-jacoco {
-   toolVersion = "0.8.2"
-}
-
-jacocoTestReport {
-   reports {
-      xml.enabled true
-      html.enabled true
-   }
 }

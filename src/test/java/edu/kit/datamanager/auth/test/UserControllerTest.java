@@ -272,7 +272,7 @@ public class UserControllerTest{
   public void testPatchWithoutEtag() throws Exception{
     String patch = "[{\"op\": \"replace\",\"path\": \"/username\",\"value\": \"changed\"}]";
     this.mockMvc.perform(patch("/api/v1/users/" + inactiveUser.getId()).contentType("application/json-patch+json").content(patch).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isPreconditionFailed());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andExpect(status().isPreconditionRequired());
   }
 
   @Test
@@ -331,7 +331,7 @@ public class UserControllerTest{
   @Test
   public void testDeleteUserWithoutEtag() throws Exception{
     this.mockMvc.perform(delete("/api/v1/users/" + inactiveUser.getId()).header(HttpHeaders.AUTHORIZATION,
-            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isPreconditionFailed());
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes()))).andDo(print()).andExpect(status().isPreconditionRequired());
   }
 
   @Test

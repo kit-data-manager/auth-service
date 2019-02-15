@@ -1,0 +1,221 @@
+= KIT Data Manager API Documentation - Authentication Service
+v{version}, KIT Data Manager Development Team, {date}
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:highlightjs-theme: github
+:toc: left
+:toclevels: 4
+:sectlinks:
+:sectnums:
+
+[introduction]
+== Introduction
+
+In this documentation, the basics of the KIT Data Manager RESTful API of the Authentication Service are described. You will be guided through the first steps of creating users and groups,
+logging in, accessing user and group information and modifying these resources.
+
+This documentation assumes, that you have an instance of the KIT Data Manager 2.0 Authentication Service installed locally. If the service is running on another
+host or port you should change hostname and/or port accordingly.
+
+The example structure is identical for all examples below. Each example starts with a CURL command that can be run by copy&paste to your console/terminal window.
+The second part shows the HTTP request sent to the server including arguments and required headers. Finally, the third block shows the response comming from the server.
+In between, special characteristics of the calls are explained together with additional, optional arguments or alternative responses.
+
+
+[[ChapterAuthenticationAndAuthorization]]
+=== Overview on Authentication and Authorization
+
+Before we start explaining how to use the Authentication Service API in details, we like to give a short introduction into the concept of Authentication and Authorization in KIT Data Manager.
+The authentication part ensures, that an authenticated and identifyable user is performing a certain request. Typically, the user has to provide a secret credential only known to her/him at
+some login form. In order not to do this in each and every request, the user receives in exchange some token valid for a short period of time. This token can then be sent with each request to identify 
+the user and to act on behalf of this user. In KIT Data Manager the aforementioned token follows the JSON Web Token (JWT) standard (https://jwt.io/). A JWT consists of three parts:
+
+1. The header containing the hashing algorithm used for creating the signature
+2. The payload containing an arbitrary number of key-value pairs containing e.g. userId, group memberships etc.
+3. The signature creating using a strong secret shared between all trusted services in order to ensure that a received token wasn't manipulated
+
+As you can see, JWT is not about hiding information. Everyone is allowed to encode and see the content of the token (that's why no secret information like passwords should be part of the token), but
+it is ensured, that a received token has been created by a trusted service by checking the signature.
+
+With JWT we now have a method to externalize authentication and to share user information between services in a trustworthy way to know, that a request was submitted by a known user. Now, we also want
+to ensure, that a user is allowed to perform a certain operation, e.g. to modify or delete a resource. At this point, the authorization comes in to play. In principle, there are two ways to hold
+authorization information:
+
+1. Store authorization information at the Authentication Service referring to external resource ids.
+2. Store authorization information in each resource referring to external user and group ids.
+
+In the former version of KIT Data Manager, the first approach was implemented. We figured out, that in situations of making strong use of authorization, external requests to the authentication service
+had a very bad influence on the performance of the repository system. Therefore, KIT Data Manager 2.0 follows the second approach. If authorization is required, a resource may hold this information
+in a custom way, e.g. which userId/groupId possesses which access permission. The information about userId and groupId of the caller is then communicated via JWT and the resource service can decide,
+if an operation is allowed or not. One drawback of this approach is a potential inconsistency between authorization information within the resources and existing users and groups. If for example a group
+is removed from the system, existing authorization information for this group remain in the respective resources. Thus, if a user or a group could be physically removed their identifiers could be reused 
+allowing the new user or group to access resources they are not meant to access. Therefore, it is only possible to deactivate users and groups via the RESTful API and to perform the actual removal later
+in a more complex but extensive cleanup process supported by tools. 
+
+As already mentioned, there are users and groups in KIT Data Manager. User creation is by default done via self registration. Furthermore, every user can create own groups. The user himself can have 
+different roles, e.g. GUEST, USER, ADMINISTRATOR, CURATOR. Furthermore, also inside the group members can have different roles. The creator of the group gets the GROUP_MANAGER role, whereas other members 
+should get the GROUP_MEMBER role by default. In addition, there is a NO_MEMBER role which can be used for temporary or permanently revoking a user's group membership without removing it. 
+
+On the resource side, the developer is in principal free on how to organize and store authorization information. With the JWT, a service received the userId and groupId used to perform the current request. 
+The service now can decide, if the user or the group is allowed to perform the current operation. In KIT Data Manager the concept of Access Control Lists (ACL) is used holding for each resource a mapping
+of permission by userId and permission by groupId. At request time, the maximum permission, either as user or as group, is used to determine the effective permission. Supported permissions are NONE, 
+READ, WRITE and ADMINISTRATE. Depending on the permission, a fast decision can be made on whether an operation (POST, GET, PUT, PATCH and DELETE) on a resource is in principal allowed or not. 
+
+In addition, the effective permission is used in KIT DAta Manager during update operations of certain fields if a caller is allowed to modify this field. The ACL for example can only be modified if the 
+caller has ADMINISTRATE permissions, whereas updating a simple description or title WRITE permissions are sufficient. However, the way how fine grained permissions should be assigned can be defined for 
+each service seperately.
+
+Finally, a few other words regarding JWT. In KIT Data Manager there are three different types of tokens: 
+
+1. User Tokens - These tokens are obtained via login as explained later. They are associated to one specific user.
+2. Service Tokens - These tokens are created with some external tool and can be used by services not providing authentication by themselfes. They typically have an infinite lifetime and should be kept very save.
+3. Temporary Tokens - These tokens are created programatically. They are typically associated with a single resource and have a very short lifetime. These tokens can be used to provide temporary (read) access to 
+certain resources and their data.
+
+In the next chapters, the basic API operations of the KIT Data Manager Authentication Service are explained. 
+
+==== Creating the First User
+
+When starting the Authentication Service for the first time, there are of course no users or groups available. Thus, creating the very first user has a special importance as this user is assumed to
+be the only user getting assigned the role ADMINISTRATOR. The curl command to create the first user looks as follows: 
+
+include::{snippets}/create-user/curl-request.adoc[]
+
+You see that creating a user is an HTTP POST request. In this request, the user information must be provided in JSON format as shown in the command. You may provide all information shown in the example.
+However, the only mandatory attributes are 'username' and 'password'. These two values will be used later on to login and to uniquely identify a single user. Firstname, lastname and email are recommended to
+be provided for enhanced service potentially making use of this information, e.g. Web UIs.
+
+[WARN]
+It might feel outlandish that a user password is submitted as plain text to a server. That's the reason why the Authentication Service should be either secured via HTTPS if accessible from the outside, or it 
+should be accessible only within the local network, e.g. behind a graphical frontend.
+
+include::{snippets}/create-user/http-request.adoc[]
+
+If the user has been created, you'll receive a response with HTTP status 201 (CREATED) and the user document containing all user-related information, either provided at creation time or added by the server.
+In this example you see, that the user received the roles 'USER' and 'ADMINISTRATOR'. This in only the case for the first user which is created. Furthermore, it is not allowed to request the role 'ADMINISTRATOR' 
+at creation time (except for the first user). Additional administrators have to be assigned by the only administrator of the service.
+
+If you receive an error status it's typically BAD_REQUEST (400) which occurs if username or password are missing of if you tried to register with role ADMINISTRATOR and not being the first user.
+
+include::{snippets}/create-user/http-response.adoc[]
+
+==== Login
+
+After creating the first user, we can now try to create a JSON Web Token for our new user. The standard login mechanism is HTTP Basic. Your credentials (username and password) can be provided as follows:
+
+include::{snippets}/login/curl-request.adoc[]
+
+The according HTTP request you can see below. In principle, the Base64 encoded form of username:password is put into the Authorization header together with the prefix 'Basic'.
+
+include::{snippets}/login/http-request.adoc[]
+
+In the response you'll receive the JSON Web Token that can be used for subsequent authentication. 
+
+include::{snippets}/login/http-response.adoc[]
+
+As mentioned before, a JSON Web Token in in principle just a Base64 encoded JSON document containing key-value pairs, so called claims, in its payload. Below you can find a decoded version of the JWT above. You see the 
+decoded header section, the payload section containing e,g, username, current group and roles, and the method how the signature is created, representing the last part of the token. These three parts of the JWT are separated 
+by a dot in the encoded version.
+
+[INFO]
+The value of <SHARED_SECRET> must identical for all services trusting the KIT Data Manager Authentication Service in order to be able to validate the signature. It should be a random string 
+
+include::jwt.adoc[]
+
+In the next example we'll use the JWT the first time to obtain information about ourselfes.
+
+==== Obtaining User Information
+
+The RESTful API allows every user to obtain information about him/herself. Therefor, the special endpoint '/users/me' exists returning user information based on the provided JWT. The curl request below shows such a request using
+the JWT we just obtained via login. You can see, that this token is provided in the Authorization header with the prefix 'Bearer'. 
+
+include::{snippets}/get-me/curl-request.adoc[]
+
+include::{snippets}/get-me/http-request.adoc[]
+
+The response holds the user information including already known fields like username, email and roles, but also new fields like loginFailures, active or locked. They are internally used to track failed login attempts and to be able
+to disable users. You can also see, that the user password is no longer part of the response. This is of course for security reasons and also because the password is not stored as plain text at the server.
+
+include::{snippets}/get-me/http-response.adoc[]
+
+[INFO]
+A typical user may also be able to access the own user information via '/users/me'. Only if a user possesses the ADMINISTRATOR role, the endpoint '/users/{id}' can be used to access information about other users.
+
+==== Changing User Information
+
+For changing user information the same limitations apply as mentioned in the information block before. You can change you own information at any time, but only administrators are allowed to change other users' information.
+Changing users (and groups) is done via HTTP PATCH operation. Therefor, JSON Patch documents following the RFC 6902 specification are sent to the server stating 
+which operation should be applied to which field with which value. A sample request is shown below.
+
+include::{snippets}/patch-me/curl-request.adoc[]
+
+The patch document states that we want to assign a value to the orcid attribute. What we also have to do is sending the current ETag with the request in order to avoid concurrent modifications. The ETag is can be obtained via GET
+request in beforehand.
+
+include::{snippets}/patch-me/http-request.adoc[]
+
+As a response we receive HTTP status 204 (NO_CONTENT). In case applying the patch has failed due to an erroneous patch document, HTTP UNPROCESSABLE_ENTITY (422) is returned, if a field would be changed that is not allowed to be changed, 
+HTTP FORBIDDEN (403) is returned.
+
+include::{snippets}/patch-me/http-response.adoc[]
+
+==== Creating a User Group
+
+After introducing the basic user-related operations, we now show how to create a group of users. Every registered and active user may create a new group. The according curl request is shown below.
+
+include::{snippets}/create-group/curl-request.adoc[]
+
+You can see the mandatory elements for creating a group. The groupId must be unique, whereas the group name can be chosen to describe the group shortly.
+
+include::{snippets}/create-group/http-request.adoc[]
+
+As a result, the JSON document representing the created group is returned. As we were using the JWT created with the previous login, the user 'jdoe' has founded the group and becomes automatically the group manager. What you also see is,
+that the group's id is written in capital letters. This is because the Authentication Service uses uppercase groupIds and lowercase userIds to distinguish both elements. By doing so, access checks do not have to distinguish between 
+user and group permissions and both information can be kept at one place. 
+
+include::{snippets}/create-group/http-response.adoc[]
+
+===== Changing Group Information
+
+Currently, our group has only one member. So let's create a second user which we can then add to the group.
+
+include::{snippets}/create-user2/curl-request.adoc[]
+
+include::{snippets}/create-user2/http-response.adoc[]
+
+Modifying a group is done in the same way as modifying a user, via HTTP PATCH. What we want to do is adding the new user with id 2 to the group. In order to address the group, its numeric id has to be used.
+The proper request URL and the patch document are looking as in the following curl request.
+
+include::{snippets}/patch-group/curl-request.adoc[]
+
+As the memberships index is 0 based, the second user must be added at index 1. Furthermore, we provide the numeric we just received before we submit the patch.
+
+include::{snippets}/patch-group/http-request.adoc[]
+
+The service returns HTTP NO_CONTENT (204) if the patch has been applied successfully.
+
+include::{snippets}/patch-group/http-response.adoc[]
+
+We can also check the group now via HTTP GET using the numeric identifier of the group in the request URL.
+
+include::{snippets}/get-patched-group/curl-request.adoc[]
+
+What we see is a second member with a role of GROUP_MEMBER in our group as expected.
+
+include::{snippets}/get-patched-group/http-response.adoc[]
+
+===== Deleting a Group
+
+Finally, we want to show how to delete a group, or better said how to disable a group.
+
+include::{snippets}/delete-group/curl-request.adoc[]
+
+include::{snippets}/delete-group/http-request.adoc[]
+
+include::{snippets}/delete-group/http-response.adoc[]
+
+
+include::{snippets}/get-deleted-group/curl-request.adoc[]
+
+include::{snippets}/get-deleted-group/http-response.adoc[]

@@ -1,0 +1,42 @@
+import java.text.SimpleDateFormat
+
+ext {
+   snippetsDir = file("build/generated-snippets")
+}
+
+test { 
+   outputs.dir snippetsDir
+}
+  
+asciidoctor {
+   attributes "snippets": snippetsDir,
+            "version": version,
+            "date": new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+   inputs.dir snippetsDir
+   dependsOn test  
+   sourceDir "docs/"
+   outputDir "build/docs"
+}
+
+test {
+   environment "spring.config.location", "classpath:/config/"
+   include '**/*AuthServiceDocumentationTest*'
+}
+
+tasks.withType(Test) {
+    testLogging {
+        events 'started', 'passed'
+    }
+}
+
+bootJar {
+   manifest {
+      attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
+   }
+   dependsOn asciidoctor
+   from ("${asciidoctor.outputDir}/html5") {
+      into 'static/docs'
+   }
+   launchScript()
+}
+   

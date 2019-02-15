@@ -57,8 +57,8 @@ public class GroupMembership{
   @SecureUpdate({"FORBIDDEN"})
   @Searchable
   private Long id;
-  @OneToOne
   
+  @OneToOne
   private RepoUser user;
   @Enumerated(EnumType.STRING)
   private RepoUserGroup.GroupRole role;
