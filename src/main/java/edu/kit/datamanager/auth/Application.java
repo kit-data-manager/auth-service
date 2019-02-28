@@ -80,15 +80,15 @@ public class Application{
     return new BCryptPasswordEncoder();
   }
 
-  @Bean
-  public IUserService userService(){
-    return new RepoUserService();
-  }
-
-  @Bean
-  public IGroupService userGroupService(){
-    return new RepoUserGroupService();//javers);
-  }
+//  @Bean
+//  public IUserService userService(){
+//    return new RepoUserService();
+//  }
+//
+//  @Bean
+//  public IGroupService userGroupService(){
+//    return new RepoUserGroupService();//javers);
+//  }
 
   @Bean
   @Primary

@@ -16,6 +16,7 @@
 package edu.kit.datamanager.auth;
 
 import edu.kit.datamanager.auth.configuration.ApplicationProperties;
+import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.auth.web.security.ExtendedJwtAuthenticationProvider;
 import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
@@ -50,6 +51,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 
   @Autowired
   private IUserService userService;
+  
+   @Autowired
+  private IGroupService groupService;
 
   @Autowired
   private BCryptPasswordEncoder passwordEncoder;
@@ -67,7 +71,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 //  }
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new ExtendedJwtAuthenticationProvider(applicationProperties.getJwtSecret(), userService, passwordEncoder, logger));
+    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new ExtendedJwtAuthenticationProvider(applicationProperties.getJwtSecret(), userService, groupService, passwordEncoder, logger));
   }
 
   @Override

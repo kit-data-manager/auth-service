@@ -40,7 +40,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.collections4.Predicate;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -112,7 +111,13 @@ public class RepoUserGroup implements EtagSupport, Serializable{
   @SecureUpdate({"ROLE_GROUP_MANAGER", "ROLE_ADMINISTRATOR"})
   private Set<GroupMembership> memberships = new HashSet<>();
 
-  public void getGRoupId(String groupId){
+  public static RepoUserGroup createGroup(String groupId){
+    RepoUserGroup group = new RepoUserGroup();
+    group.setGroupId(groupId);
+    return group;
+  }
+
+  public void setGroupId(String groupId){
     if(groupId != null){
       this.groupId = groupId.toUpperCase();
     }
@@ -128,6 +133,11 @@ public class RepoUserGroup implements EtagSupport, Serializable{
       //update membership
       membership.setRole(role);
     }
+  }
+
+  public final boolean isMember(final RepoUser user){
+    GroupMembership membership = IteratorUtils.find(memberships.iterator(), (GroupMembership t) -> Long.compare(user.getId(), t.getUser().getId()) == 0);
+    return membership != null && !membership.getRole().equals(GroupRole.NO_MEMBER);
   }
 
   public final GroupRole getUserRole(final String userName){

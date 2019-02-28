@@ -19,7 +19,9 @@ import edu.kit.datamanager.auth.configuration.ApplicationProperties;
 import edu.kit.datamanager.auth.dao.IGroupDao;
 import edu.kit.datamanager.auth.dao.IUserDao;
 import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
@@ -85,6 +87,9 @@ public class LoginControllerTest{
   private RepoUser adminUser;
   private RepoUser defaultUser;
   private RepoUser inactiveUser;
+  private RepoUserGroup someGroup;
+  private RepoUserGroup privilegedGroup;
+  private RepoUserGroup inactiveGroup;
 
   @Before
   public void setUp(){
@@ -121,6 +126,31 @@ public class LoginControllerTest{
     inactive.setRolesAsEnum(Arrays.asList(RepoUserRole.USER));
     inactive.setEmail("test@mail.org");
     inactiveUser = userDao.saveAndFlush(inactive);
+
+    //add someGroup
+    RepoUserGroup group = new RepoUserGroup();
+    group.setGroupId("SOME");
+    group.setGroupname("Some Group");
+    group.addOrUpdateMembership(admin, RepoUserGroup.GroupRole.GROUP_MANAGER);
+    group.addOrUpdateMembership(user, RepoUserGroup.GroupRole.GROUP_MEMBER);
+    group.addOrUpdateMembership(inactive, RepoUserGroup.GroupRole.NO_MEMBER);
+    someGroup = groupDao.save(group);
+    //add privilegedGroup
+    group = new RepoUserGroup();
+    group.setGroupId("PRIVILEGED");
+    group.setGroupname("Privileged Group");
+    group.addOrUpdateMembership(admin, RepoUserGroup.GroupRole.GROUP_MANAGER);
+    privilegedGroup = groupDao.save(group);
+
+    //add inactiveGroup
+    group = new RepoUserGroup();
+    group.setGroupId("INACTIVE");
+    group.setGroupname("Inactive Group");
+    group.setActive(Boolean.FALSE);
+    group.addOrUpdateMembership(admin, RepoUserGroup.GroupRole.GROUP_MANAGER);
+    group.addOrUpdateMembership(user, RepoUserGroup.GroupRole.GROUP_MEMBER);
+    group.addOrUpdateMembership(inactive, RepoUserGroup.GroupRole.NO_MEMBER);
+    inactiveGroup = groupDao.save(group);
   }
 
   @Test
@@ -165,6 +195,45 @@ public class LoginControllerTest{
 
     this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
             "Basic " + Base64Utils.encodeToString("user:user".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void testLoginWithGroup() throws Exception{
+    //authenticate and login
+    MvcResult result = this.mockMvc.perform(post("/api/v1/login/").header(HttpHeaders.AUTHORIZATION,
+            "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).param("groupId", "SOME")).andDo(print()).andExpect(status().isOk()).andReturn();
+    String jwt = result.getResponse().getContentAsString();
+
+    //check token (validate signature and check username)
+    Jws<Claims> claimsJws = Jwts.parser().setSigningKey(applicationProperties.getJwtSecret()).parseClaimsJws(jwt);
+    Assert.assertEquals(adminUser.getUsername(), claimsJws.getBody().get("username", String.class));
+    Assert.assertEquals(someGroup.getGroupId(), claimsJws.getBody().get("groupid", String.class));
+    //use token to obtain own user information
+    this.mockMvc.perform(get("/api/v1/users/me").header(HttpHeaders.AUTHORIZATION,
+            "Bearer " + jwt)).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.username").value("admin"));
+  }
+
+  @Test
+  public void testLoginWithInactiveGroup() throws Exception{
+    //login should not work
+    this.mockMvc.perform(post("/api/v1/login/").header(HttpHeaders.AUTHORIZATION, "Basic " + Base64Utils.encodeToString("admin:admin".getBytes())).param("groupId", "INACTIVE")).andDo(print()).andExpect(status().isUnauthorized()).andReturn();
+  }
+
+  @Test
+  public void testLoginWithoutGroupMembership() throws Exception{
+    //login should not work
+    this.mockMvc.perform(post("/api/v1/login/").header(HttpHeaders.AUTHORIZATION, "Basic " + Base64Utils.encodeToString("user:user".getBytes())).param("groupId", "PRIVILEGED")).andDo(print()).andExpect(status().isUnauthorized()).andReturn();
+  }
+
+  @Test
+  public void testLoginToNonExistingGroup() throws Exception{
+    //login should not work
+    this.mockMvc.perform(post("/api/v1/login/").header(HttpHeaders.AUTHORIZATION, "Basic " + Base64Utils.encodeToString("user:user".getBytes())).param("groupId", "NOT_EXISTS")).andDo(print()).andExpect(status().isUnauthorized()).andReturn();
+  }
+
+  @Test
+  public void testLoginToInactiveGroup() throws Exception{
+    this.mockMvc.perform(post("/api/v1/login/").header(HttpHeaders.AUTHORIZATION, "Basic " + Base64Utils.encodeToString("inactive:inactive".getBytes()))).andDo(print()).andExpect(status().isUnauthorized());
   }
 
   @Test

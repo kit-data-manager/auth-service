@@ -75,7 +75,7 @@ certain resources and their data.
 
 In the next chapters, the basic API operations of the KIT Data Manager Authentication Service are explained. 
 
-==== Creating the First User
+=== Creating the First User
 
 When starting the Authentication Service for the first time, there are of course no users or groups available. Thus, creating the very first user has a special importance as this user is assumed to
 be the only user getting assigned the role ADMINISTRATOR. The curl command to create the first user looks as follows: 
@@ -100,7 +100,7 @@ If you receive an error status it's typically BAD_REQUEST (400) which occurs if 
 
 include::{snippets}/create-user/http-response.adoc[]
 
-==== Login
+=== Login
 
 After creating the first user, we can now try to create a JSON Web Token for our new user. The standard login mechanism is HTTP Basic. Your credentials (username and password) can be provided as follows:
 
@@ -125,7 +125,7 @@ include::jwt.adoc[]
 
 In the next example we'll use the JWT the first time to obtain information about ourselfes.
 
-==== Obtaining User Information
+=== Obtaining User Information
 
 The RESTful API allows every user to obtain information about him/herself. Therefor, the special endpoint '/users/me' exists returning user information based on the provided JWT. The curl request below shows such a request using
 the JWT we just obtained via login. You can see, that this token is provided in the Authorization header with the prefix 'Bearer'. 
@@ -142,7 +142,7 @@ include::{snippets}/get-me/http-response.adoc[]
 [INFO]
 A typical user may also be able to access the own user information via '/users/me'. Only if a user possesses the ADMINISTRATOR role, the endpoint '/users/{id}' can be used to access information about other users.
 
-==== Changing User Information
+=== Changing User Information
 
 For changing user information the same limitations apply as mentioned in the information block before. You can change you own information at any time, but only administrators are allowed to change other users' information.
 Changing users (and groups) is done via HTTP PATCH operation. Therefor, JSON Patch documents following the RFC 6902 specification are sent to the server stating 
@@ -160,7 +160,7 @@ HTTP FORBIDDEN (403) is returned.
 
 include::{snippets}/patch-me/http-response.adoc[]
 
-==== Creating a User Group
+=== Creating a User Group
 
 After introducing the basic user-related operations, we now show how to create a group of users. Every registered and active user may create a new group. The according curl request is shown below.
 
@@ -176,7 +176,7 @@ user and group permissions and both information can be kept at one place.
 
 include::{snippets}/create-group/http-response.adoc[]
 
-===== Changing Group Information
+==== Changing Group Information
 
 Currently, our group has only one member. So let's create a second user which we can then add to the group.
 
@@ -205,17 +205,31 @@ What we see is a second member with a role of GROUP_MEMBER in our group as expec
 
 include::{snippets}/get-patched-group/http-response.adoc[]
 
-===== Deleting a Group
+==== Deleting a Group
 
-Finally, we want to show how to delete a group, or better said how to disable a group.
+Finally, we want to show how to delete a group. Actually, in order to avoid inconsistencies in services using authorization information, groups and users cannot be deleted but are disabled. The curl command for 
+deleting the group we just created looks as follows.
 
 include::{snippets}/delete-group/curl-request.adoc[]
 
+The group is addressed using the numeric group id. The request also contains the current ETag of the group.
+
 include::{snippets}/delete-group/http-request.adoc[]
+
+In the response, status HTTP 204 (NO_CONTENT) is returned and the group can be expected to be inactive. 
 
 include::{snippets}/delete-group/http-response.adoc[]
 
+To validate this, we finally issue a GET request to the group, which should now be inactive. 
 
 include::{snippets}/get-deleted-group/curl-request.adoc[]
 
+[INFO] 
+Obtaining a group after deletion only works if the user has role ADMINISTRATOR. Otherwise, the server responds as if the group would not exist with HTTP 404 (NOT_FOUND).
+
+In our case, we are able to obtain the group information, which looks as follows.
+
 include::{snippets}/get-deleted-group/http-response.adoc[]
+
+Inactive groups cannot be used for login any longer. Providing an inactive group during login will result in a status HTTP 401 (UNAUTHORIZED). If the group should be re-enabled, this has to be done via 
+PATCH operation sent by a user with role ADMINISTRATOR.

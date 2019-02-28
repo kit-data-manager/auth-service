@@ -59,8 +59,6 @@ public class LoginController{
     }
 
     JwtAuthenticationToken token = ((JwtAuthenticationToken) AuthenticationHelper.getAuthentication());
-
-    //TODO #2 Validate group membership
     LOGGER.debug("Successfully logged in as user {}.", token.getName());
     return token.getToken();
   }

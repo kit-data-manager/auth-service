@@ -17,9 +17,13 @@ package edu.kit.datamanager.auth.web.security;
 
 import com.github.fge.jsonpatch.JsonPatch;
 import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.auth.domain.RepoUserGroup;
+import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
+import edu.kit.datamanager.exceptions.PatchApplicationException;
+import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import java.util.ArrayList;
@@ -29,6 +33,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,7 +55,7 @@ public class ExtendedJwtAuthenticationProviderTest{
   private final static RepoUser USER = new RepoUser();
   private final static BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder();
 
-  private final static IUserService SERVICE = new IUserService(){
+  private final static IUserService USER_SERVICE = new IUserService(){
     @Override
     public Page<RepoUser> findAll(RepoUser example, Pageable pgbl){
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -104,6 +109,9 @@ public class ExtendedJwtAuthenticationProviderTest{
 
   };
 
+  @Autowired
+  private IGroupService userGroupService;
+
   @BeforeClass
   public static void setup(){
     USER.setActive(Boolean.TRUE);
@@ -125,7 +133,7 @@ public class ExtendedJwtAuthenticationProviderTest{
 
   @Test
   public void testSuccessfulAuthentication(){
-    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", SERVICE, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
+    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", USER_SERVICE, userGroupService, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
     Authentication auth = getAuthentication(USER);
 
     RepoUser authUser = provider.getUser(auth);
@@ -136,7 +144,7 @@ public class ExtendedJwtAuthenticationProviderTest{
 
   @Test(expected = InvalidAuthenticationException.class)
   public void testInvalidPassword(){
-    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", SERVICE, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
+    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", USER_SERVICE, userGroupService, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
     Authentication auth = getAuthentication(USER, "invalid");
 
     RepoUser authUser = provider.getUser(auth);
@@ -147,7 +155,7 @@ public class ExtendedJwtAuthenticationProviderTest{
 
   @Test(expected = InvalidAuthenticationException.class)
   public void testInactiveUser(){
-    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", SERVICE, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
+    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", USER_SERVICE, userGroupService, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
     USER.setActive(false);
     Authentication auth = getAuthentication(USER);
     try{
@@ -160,7 +168,7 @@ public class ExtendedJwtAuthenticationProviderTest{
 
   @Test(expected = InvalidAuthenticationException.class)
   public void testLockedUser(){
-    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", SERVICE, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
+    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", USER_SERVICE, userGroupService, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
     USER.setLocked(true);
     Authentication auth = getAuthentication(USER);
     try{
@@ -173,7 +181,7 @@ public class ExtendedJwtAuthenticationProviderTest{
 
   @Test
   public void testLocking(){
-    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", SERVICE, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
+    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", USER_SERVICE, userGroupService, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
     Assert.assertFalse(USER.getLocked());
     Authentication auth = getAuthentication(USER, null);
     try{
@@ -195,7 +203,7 @@ public class ExtendedJwtAuthenticationProviderTest{
 
   @Test
   public void testSupports(){
-    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", SERVICE, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
+    ExtendedJwtAuthenticationProvider provider = new ExtendedJwtAuthenticationProvider("test123", USER_SERVICE, userGroupService, ENCODER, LoggerFactory.getLogger(ExtendedJwtAuthenticationProviderTest.class));
     Assert.assertTrue(provider.supports(JwtAuthenticationToken.class));
     Assert.assertTrue(provider.supports(UsernamePasswordAuthenticationToken.class));
     Assert.assertFalse(provider.supports(AnonymousAuthenticationToken.class));

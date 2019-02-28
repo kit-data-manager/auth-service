@@ -18,6 +18,8 @@ package edu.kit.datamanager.auth.web.security;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.auth.domain.RepoUser;
+import edu.kit.datamanager.auth.domain.RepoUserGroup;
+import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.exceptions.InvalidAuthenticationException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
@@ -33,6 +35,8 @@ import java.util.Map;
 import java.util.Set;
 import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -56,11 +60,13 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
   private final String secretKey;
   private final IUserService userService;
   private final BCryptPasswordEncoder passwordEncoder;
+  private final IGroupService groupService;
 
-  public ExtendedJwtAuthenticationProvider(String secretKey, IUserService userService, BCryptPasswordEncoder passwordEncoder, Logger logger){
+  public ExtendedJwtAuthenticationProvider(String secretKey, IUserService userService, IGroupService groupService, BCryptPasswordEncoder passwordEncoder, Logger logger){
     super(secretKey, logger);
     this.secretKey = secretKey;
     this.userService = userService;
+    this.groupService = groupService;
     this.passwordEncoder = passwordEncoder;
     this.LOGGER = logger;
   }
@@ -83,6 +89,20 @@ public class ExtendedJwtAuthenticationProvider extends JwtAuthenticationProvider
     String groupId = attr.getRequest().getParameter("groupId");
     if(groupId == null){
       groupId = "USERS";
+    } else{
+      //check membership and group state
+      Page<RepoUserGroup> result = groupService.findAll(RepoUserGroup.createGroup(groupId), PageRequest.of(0, 1), true);
+      if(!result.hasContent()){
+        throw new InvalidAuthenticationException("Invalid group provided.");
+      } else{
+        RepoUserGroup group = result.getContent().get(0);
+        if(!group.getActive()){
+          throw new InvalidAuthenticationException("Group " + groupId + " is disabled.");
+        } else if(!group.isMember(user)){
+          throw new InvalidAuthenticationException("Caller " + user.getUsername() + " is no member of group " + groupId + ".");
+        }
+        //group is active and caller is member
+      }
     }
 
     Claims claims = new DefaultClaims();
