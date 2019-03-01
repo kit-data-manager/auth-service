@@ -86,7 +86,7 @@ You see that creating a user is an HTTP POST request. In this request, the user 
 However, the only mandatory attributes are 'username' and 'password'. These two values will be used later on to login and to uniquely identify a single user. Firstname, lastname and email are recommended to
 be provided for enhanced service potentially making use of this information, e.g. Web UIs.
 
-[WARN]
+[NOTE]
 It might feel outlandish that a user password is submitted as plain text to a server. That's the reason why the Authentication Service should be either secured via HTTPS if accessible from the outside, or it 
 should be accessible only within the local network, e.g. behind a graphical frontend.
 
@@ -115,13 +115,14 @@ In the response you'll receive the JSON Web Token that can be used for subsequen
 include::{snippets}/login/http-response.adoc[]
 
 As mentioned before, a JSON Web Token in in principle just a Base64 encoded JSON document containing key-value pairs, so called claims, in its payload. Below you can find a decoded version of the JWT above. You see the 
-decoded header section, the payload section containing e,g, username, current group and roles, and the method how the signature is created, representing the last part of the token. These three parts of the JWT are separated 
+decoded header section, the payload section containing e,g, username, groupid and roles, and the method how the signature is created, representing the last part of the token. These three parts of the JWT are separated 
 by a dot in the encoded version.
 
-[INFO]
-The value of <SHARED_SECRET> must identical for all services trusting the KIT Data Manager Authentication Service in order to be able to validate the signature. It should be a random string 
-
 include::jwt.adoc[]
+
+[WARNING]
+The value of <SHARED_SECRET> must identical for all services trusting the KIT Data Manager Authentication Service in order to be able to validate the signature. It should be a random string with a certain length so it cannot be
+guessed.
 
 In the next example we'll use the JWT the first time to obtain information about ourselfes.
 
@@ -139,7 +140,7 @@ to disable users. You can also see, that the user password is no longer part of 
 
 include::{snippets}/get-me/http-response.adoc[]
 
-[INFO]
+[NOTE]
 A typical user may also be able to access the own user information via '/users/me'. Only if a user possesses the ADMINISTRATOR role, the endpoint '/users/{id}' can be used to access information about other users.
 
 === Changing User Information
@@ -176,7 +177,7 @@ user and group permissions and both information can be kept at one place.
 
 include::{snippets}/create-group/http-response.adoc[]
 
-==== Changing Group Information
+=== Changing Group Information
 
 Currently, our group has only one member. So let's create a second user which we can then add to the group.
 
@@ -205,7 +206,7 @@ What we see is a second member with a role of GROUP_MEMBER in our group as expec
 
 include::{snippets}/get-patched-group/http-response.adoc[]
 
-==== Deleting a Group
+=== Deleting a Group
 
 Finally, we want to show how to delete a group. Actually, in order to avoid inconsistencies in services using authorization information, groups and users cannot be deleted but are disabled. The curl command for 
 deleting the group we just created looks as follows.
@@ -224,7 +225,7 @@ To validate this, we finally issue a GET request to the group, which should now 
 
 include::{snippets}/get-deleted-group/curl-request.adoc[]
 
-[INFO] 
+[NOTE] 
 Obtaining a group after deletion only works if the user has role ADMINISTRATOR. Otherwise, the server responds as if the group would not exist with HTTP 404 (NOT_FOUND).
 
 In our case, we are able to obtain the group information, which looks as follows.
