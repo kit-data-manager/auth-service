@@ -72,7 +72,7 @@ user@localhost:/home/user/auth-service$ java -jar build/libs/auth-service.jar
 
 ```
 
-If your 'application.yml' is not located inside the project folder you can provide it using the command line argument --spring.config.location=<PATH_TO_APPLICATION.YML>
+If your 'application.properties' is not located inside the project folder you can provide it using the command line argument --spring.config.location=<PATH_TO_APPLICATION.PROPERTIES>
 As soon as the microservice is started, you can browse to 
 
 http://localhost:8080/swagger-ui.html
