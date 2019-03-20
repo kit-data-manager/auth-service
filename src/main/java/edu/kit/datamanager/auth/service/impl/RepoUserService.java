@@ -74,6 +74,12 @@ public class RepoUserService implements IUserService{
       logger.error("No username provided. Throwing BadArgumentException.");
       throw new BadArgumentException("No username assigned to provided user.");
     }
+
+    if("SELF".equals(user.getUsername())){
+      logger.error("Invalid username 'SELF' provided. Throwing BadArgumentException.");
+      throw new BadArgumentException("Username 'SELF' is not allowed.");
+    }
+
     if(user.getPassword() == null){
       logger.error("No password provided. Throwing BadArgumentException.");
       throw new BadArgumentException("No password assigned to provided user.");

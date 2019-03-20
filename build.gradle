@@ -24,6 +24,8 @@ apply plugin: 'idea'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
+apply from: 'gradle/build_dependencies.gradle'
+
 jar {
    baseName = 'auth-service'
    version =  '0.1'
@@ -45,7 +47,7 @@ configurations {
 if (project.hasProperty('travis')) {
    println 'Using travis profile for building ' + project.getName()
    apply from: 'gradle/profile-travis.gradle'
-} else if (project.hasProperty('release')) {
+} else if (project.hasProperty('release') || project.hasProperty('clean-release')) {
    println 'Using release profile for building ' + project.getName()
    apply from: 'gradle/profile-release.gradle'   
 }
@@ -54,9 +56,6 @@ dependencies {
    compile("org.springframework.boot:spring-boot-starter-data-rest")
    compile("org.springframework:spring-context-support")
    compile("org.springframework.boot:spring-boot-starter-amqp")
-  
-   //needed later for audit
-   //   compile("org.javers:javers-spring-boot-starter-sql:3.9.0")
 
    compile("io.springfox:springfox-swagger-ui:2.9.0")
 
