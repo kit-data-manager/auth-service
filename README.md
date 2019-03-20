@@ -6,59 +6,44 @@ be handed over to other services for authorization decisions.
 
 ## How to build
 
-In order to build this microservice you'll need:
-
-* Java SE Development Kit 8 or higher
-
 After obtaining the sources change to the folder where the sources are located perform the following steps:
 
 ```
-user@localhost:/home/user/auth-service$ git submodule foreach git pull origin master
-Entering 'libraries/service-base'
-From git://github.com/kit-data-manager/service-base
- * branch            master     -> FETCH_HEAD
-Already up to date.
+user@localhost:/home/user/auth-service$ ./gradlew -Prelease build
+> Configure project :
+Using release profile for building auth-service
+<-------------> 0% EXECUTING [0s]
+[...]
 user@localhost:/home/user/auth-service$
 ```
 
-This first step will fetch the most recent version of all included submodules from GitHub, currently this 
-is only the [service-base module](https://github.com/kit-data-manager/service-base). 
+The Gradle wrapper will now take care of downloading the configured version of Gradle, checking out all required libraries, build these
+libraries and finally build the auth-service microservice itself. As a result, a fat jar containing the entire service is created at 'build/jars/auth-service.jar'.
 
+In case you need an entirely clean release, you should call:
 ```
-user@localhost:/home/user/auth-service$ cd libraries/service-base
-user@localhost:/home/user/auth-service/libraries/service-base$ ./gradlew install
-BUILD SUCCESSFUL in 1s
-3 actionable tasks: 3 executed
-user@localhost:/home/user/auth-service/libraries/service-base$ 
-```
-
-In the second step, all submodules have to be built and installed into the local Maven repository. If this step has been
-done before for the most recent version of all submodules, it can be skipped. 
-
-```
-user@localhost:/home/user/auth-service$ cd ../../
-user@localhost:/home/user/auth-service$ ./gradlew build
-BUILD SUCCESSFUL in 1s
-6 actionable tasks: 1 executed, 5 up-to-date
+user@localhost:/home/user/auth-service$ ./gradlew -Pclean-release clean build
+> Configure project :
+Using release profile for building auth-service
+<-------------> 0% EXECUTING [0s]
+[...]
 user@localhost:/home/user/auth-service$
 ```
 
-Finally, the actual microservice can be built. As a result, a fat jar containing the entire service is created at 'build/jars/auth-service.jar'.
-
+This will also checkout the HEAD revision of auth-service itself and rebuilds all artifacts.
 
 ## How to start
 
 Before you are able to start the authentication microservice, you have to modify the application properties according to your local setup. 
-Therefor, copy the file 'settings/application.yml' to your project folder and customize it. Special attentioned should be payed to the
+Therefor, copy the file 'settings/application.properties' to your project folder and customize it. Special attentioned should be payed to the
 properties in the 'datasource' section as well as the 'jwtSecret', which should have assigned a random value of a certain length, e.g. 32 characters,
 so it is impossible to guess this secret. 
 
-As soon as 'application.yml' is completed, you may start the authentication microservice by executing the following command inside the project folder, 
+As soon as 'application.properties' is completed, you may start the authentication microservice by executing the following command inside the project folder, 
 e.g. where the service has been built before:
 
 ```
-user@localhost:/home/user/auth-service$ 
-user@localhost:/home/user/auth-service$ java -jar build/libs/auth-service.jar
+user@localhost:/home/user/auth-service$ ./build/libs/auth-service.jar
 
   .   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
@@ -78,7 +63,9 @@ As soon as the microservice is started, you can browse to
 http://localhost:8080/swagger-ui.html
 
 in order to see available RESTful endpoints and their documentation. Furthermore, you can use this Web interface to test single API calls in order to get familiar with the 
-service.
+service. A small documentation guiding you through the first steps of using the RESTful API you can find at
+
+http://localhost:8080/static/docs/documentation.html
 
 ## More Information
 
