@@ -48,6 +48,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -108,7 +109,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<RepoUser> getById(@PathVariable(value = "id") String id, WebRequest request, HttpServletResponse response){
+  public ResponseEntity<RepoUser> getById(@PathVariable(value = "id") String id, @RequestParam(value = "version", required = false) Long l, WebRequest request, HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
     RepoUser user = userService.findById(id);

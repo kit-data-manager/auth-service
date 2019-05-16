@@ -53,6 +53,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -90,15 +91,14 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
 
     filterAndAutoReturnUserGroup(newGroup);
     
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(Long.toString(newGroup.getId()), request, response)).toUri()).eTag("\"" + newGroup.getEtag() + "\"").build();
+    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(Long.toString(newGroup.getId()), null, request, response)).toUri()).eTag("\"" + newGroup.getEtag() + "\"").build();
   }
 
   @Override
-  public ResponseEntity<RepoUserGroup> getById(@PathVariable("id") final String id, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity<RepoUserGroup> getById(@PathVariable("id") final String id, @RequestParam(value = "version", required = false) Long l, WebRequest request, final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
     RepoUserGroup group = userGroupService.findById(id);
-
     if(!group.getActive() && !AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
       LOGGER.warn("Access to inactive group with id {} requested by principal {} w/o ADMINISTRATOR privileges. Throwing ResourceNotFoundException.", id, AuthenticationHelper.getPrincipal());
       throw new ResourceNotFoundException("Group with id " + id + " was not found or is disabled.");
