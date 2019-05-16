@@ -101,10 +101,6 @@ public class Application{
     return new JsonViewSupportFactoryBean();
   }
 
-//  @Bean
-//  public Queue myQueue(){
-//    return new Queue("myqueue");
-//  }
   public static void main(String[] args){
     ApplicationContext ctx = SpringApplication.run(Application.class, args);
   }
