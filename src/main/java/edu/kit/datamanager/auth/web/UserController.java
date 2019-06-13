@@ -33,6 +33,7 @@ import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -125,12 +126,12 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<List<RepoUser>> findAll(Pageable pgbl, WebRequest wr, HttpServletResponse response, final UriComponentsBuilder uriBuilder){
-    return findByExample(null, pgbl, wr, response, uriBuilder);
+  public ResponseEntity<List<RepoUser>> findAll(@RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+    return findByExample(null, lastUpdateFrom, lastUpdateUntil, pgbl, wr, response, uriBuilder);
   }
 
   @Override
-  public ResponseEntity<List<RepoUser>> findByExample(@RequestBody RepoUser example, final Pageable pgbl, final WebRequest wr, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUser>> findByExample(@RequestBody RepoUser example, @RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, final Pageable pgbl, final WebRequest wr, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     ControllerUtils.checkAnonymousAccess();
 
     if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){

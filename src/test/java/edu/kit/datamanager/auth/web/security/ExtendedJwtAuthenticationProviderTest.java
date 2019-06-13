@@ -26,6 +26,7 @@ import edu.kit.datamanager.exceptions.PatchApplicationException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import org.apache.commons.collections4.CollectionUtils;
@@ -104,6 +105,11 @@ public class ExtendedJwtAuthenticationProviderTest{
 
     @Override
     public RepoUser put(RepoUser c, RepoUser c1, Collection<? extends GrantedAuthority> clctn) throws UpdateForbiddenException{
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public Page<RepoUser> findAll(RepoUser c, Instant instnt, Instant instnt1, Pageable pgbl){
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 

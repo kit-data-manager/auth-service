@@ -31,6 +31,7 @@ import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import edu.kit.datamanager.util.PatchUtil;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Optional;
 import javax.persistence.EntityManager;
@@ -75,7 +76,7 @@ public class RepoUserGroupService implements IGroupService{
   }
 
   @Override
-  public Page<RepoUserGroup> findAll(RepoUserGroup example, Pageable pgbl){
+  public Page<RepoUserGroup> findAll(RepoUserGroup example, Instant lastUpdateFrom, Instant lastUpdateUntil, Pageable pgbl){
     logger.trace("Performing findAll({}, {}).", example, pgbl);
     if(example != null){
       logger.trace("Example provided, using example spec and calling findAll(spec, pgbl)");

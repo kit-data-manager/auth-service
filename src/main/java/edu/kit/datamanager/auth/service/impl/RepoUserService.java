@@ -27,6 +27,7 @@ import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.util.ControllerUtils;
 import edu.kit.datamanager.util.PatchUtil;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
@@ -159,8 +160,8 @@ public class RepoUserService implements IUserService{
 
   @Override
   @Transactional(readOnly = true)
-  public Page<RepoUser> findAll(RepoUser example, Pageable pgbl){
-    logger.trace("Performing findAll({}, {}).", example, pgbl);
+  public Page<RepoUser> findAll(RepoUser example, Instant lastUpdateFrom, Instant lastUpdateUntil, Pageable pgbl){
+    logger.trace("Performing findAll({}, {}, {}, {}).", example, lastUpdateFrom, lastUpdateUntil, pgbl);
     if(example != null){
       logger.trace("Example provided, using example spec and calling findAll(spec, pgbl)");
       Specification<RepoUser> spec = Specification.where(new ByExampleSpecification(em).byExample(example));

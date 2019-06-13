@@ -42,6 +42,7 @@ import edu.kit.datamanager.exceptions.FeatureNotImplementedException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -90,7 +91,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
     RepoUserGroup newGroup = userGroupService.create(group, (String) AuthenticationHelper.getPrincipal());
 
     filterAndAutoReturnUserGroup(newGroup);
-    
+
     return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(Long.toString(newGroup.getId()), null, request, response)).toUri()).eTag("\"" + newGroup.getEtag() + "\"").build();
   }
 
@@ -119,12 +120,12 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   }
 
   @Override
-  public ResponseEntity<List<RepoUserGroup>> findAll(Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
-    return findByExample(null, pgbl, request, response, uriBuilder);
+  public ResponseEntity<List<RepoUserGroup>> findAll(@RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+    return findByExample(null, lastUpdateFrom, lastUpdateUntil, pgbl, request, response, uriBuilder);
   }
 
   @Override
-  public ResponseEntity<List<RepoUserGroup>> findByExample(@RequestBody RepoUserGroup example, Pageable pgbl, WebRequest req, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUserGroup>> findByExample(@RequestBody RepoUserGroup example, @RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, Pageable pgbl, WebRequest req, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
     ControllerUtils.checkAnonymousAccess();
 
     PageRequest request = ControllerUtils.checkPaginationInformation(pgbl);
