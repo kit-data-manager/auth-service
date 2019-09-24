@@ -9,7 +9,7 @@ be handed over to other services for authorization decisions.
 After obtaining the sources change to the folder where the sources are located perform the following steps:
 
 ```
-user@localhost:/home/user/auth-service$ ./gradlew -Prelease build
+user@localhost:/home/user/auth-service$ ./gradlew -Pclean-release build
 > Configure project :
 Using release profile for building auth-service
 <-------------> 0% EXECUTING [0s]
@@ -19,18 +19,6 @@ user@localhost:/home/user/auth-service$
 
 The Gradle wrapper will now take care of downloading the configured version of Gradle, checking out all required libraries, build these
 libraries and finally build the auth-service microservice itself. As a result, a fat jar containing the entire service is created at 'build/jars/auth-service.jar'.
-
-In case you need an entirely clean release, you should call:
-```
-user@localhost:/home/user/auth-service$ ./gradlew -Pclean-release clean build
-> Configure project :
-Using release profile for building auth-service
-<-------------> 0% EXECUTING [0s]
-[...]
-user@localhost:/home/user/auth-service$
-```
-
-This will also checkout the HEAD revision of auth-service itself and rebuilds all artifacts.
 
 ## How to start
 
