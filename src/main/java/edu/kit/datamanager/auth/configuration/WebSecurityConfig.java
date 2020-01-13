@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth;
+package edu.kit.datamanager.auth.configuration;
 
 import edu.kit.datamanager.auth.configuration.ApplicationProperties;
 import edu.kit.datamanager.auth.service.IGroupService;

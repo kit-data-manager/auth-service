@@ -19,6 +19,7 @@ import com.github.fge.jsonpatch.JsonPatch;
 import com.monitorjbl.json.JsonResult;
 import com.monitorjbl.json.JsonView;
 import static com.monitorjbl.json.Match.match;
+import edu.kit.datamanager.auth.domain.GroupMembership;
 import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.auth.domain.RepoUserGroup.GroupRole;
@@ -51,7 +52,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -90,9 +91,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
 
     RepoUserGroup newGroup = userGroupService.create(group, (String) AuthenticationHelper.getPrincipal());
 
-    filterAndAutoReturnUserGroup(newGroup);
-
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).getById(Long.toString(newGroup.getId()), null, request, response)).toUri()).eTag("\"" + newGroup.getEtag() + "\"").build();
+    return ResponseEntity.created(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getById(Long.toString(newGroup.getId()), null, request, response)).toUri()).eTag("\"" + newGroup.getEtag() + "\"").body(filterUserGroup(newGroup));
   }
 
   @Override
@@ -114,9 +113,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
       }
     }
 
-    filterAndAutoReturnUserGroup(group);
-
-    return ResponseEntity.ok().eTag("\"" + group.getEtag() + "\"").build();
+    return ResponseEntity.ok().eTag("\"" + group.getEtag() + "\"").body(filterUserGroup(group));
   }
 
   @Override
@@ -135,9 +132,7 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
     eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(RepoUserGroup.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), request.getPageSize()));
     //publish listing event??
 
-    filterAndAutoReturnUserGroups(page.getContent());
-
-    return ResponseEntity.ok().build();
+    return ResponseEntity.ok().body(filterUserGroups(page.getContent()));
   }
 
   @Override
@@ -204,14 +199,21 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
     return ResponseEntity.noContent().build();
   }
 
-  private void filterAndAutoReturnUserGroup(RepoUserGroup group){
-    json.use(JsonView.with(group)
-            .onClass(RepoUser.class, match().exclude("*").include("username").include("id")));
+  private RepoUserGroup filterUserGroup(RepoUserGroup group){
+    group.getMemberships().forEach((membership) -> {
+      membership.getUser().clean();
+    });
+
+    return group;
   }
 
-  private void filterAndAutoReturnUserGroups(List<RepoUserGroup> groups){
-    json.use(JsonView.with(groups)
-            .onClass(RepoUser.class, match().exclude("*").include("username").include("id")));
+  private List<RepoUserGroup> filterUserGroups(List<RepoUserGroup> groups){
+    groups.forEach((group) -> {
+      group.getMemberships().forEach((membership) -> {
+        membership.getUser().clean();
+      });
+    });
+    return groups;
   }
 
   @Override

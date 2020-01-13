@@ -235,4 +235,19 @@ public class RepoUser implements UserDetails, EtagSupport{
     setPassword(tmpPwd);
     return result;
   }
+
+  public void clean(){
+    firstname = null;
+    lastname = null;
+    email = null;
+    activeGroup = null;
+    password = null;
+    orcid = null;
+    loginFailures = null;
+
+    lockedUntil = null;
+    active = null;
+    locked = null;
+    roles = null;
+  }
 }

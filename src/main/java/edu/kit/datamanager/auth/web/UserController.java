@@ -42,7 +42,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -83,9 +83,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
   public ResponseEntity<RepoUser> create(@RequestBody RepoUser user, WebRequest request, HttpServletResponse response){
     RepoUser newUser = userService.create(user, AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue()));
 
-    filterAndAutoReturnRepoUser(newUser);
-
-    return ResponseEntity.created(ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).eTag("\"" + user.getEtag() + "\"").build();
+    return ResponseEntity.created(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).eTag("\"" + user.getEtag() + "\"").body(filterRepoUser(newUser));
   }
 
   @ApiOperation(value = "Obtain caller information for the currently authenticated user.",
@@ -104,9 +102,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
       throw new CustomInternalServerError("Failed to obtain authenticated repository user '" + principal + "'.");
     }
 
-    filterAndAutoReturnRepoUser(me);
-
-    return ResponseEntity.ok().eTag("\"" + me.getEtag() + "\"").build();
+    return ResponseEntity.ok().eTag("\"" + me.getEtag() + "\"").body(filterRepoUser(me));
   }
 
   @Override
@@ -120,9 +116,7 @@ public class UserController implements IGenericResourceController<RepoUser>{
       throw new AccessForbiddenException("Insufficient role. ROLE_ADMINISTRATOR required to read other users.");
     }
 
-    filterAndAutoReturnRepoUser(user);
-
-    return ResponseEntity.ok().eTag("\"" + user.getEtag() + "\"").build();
+    return ResponseEntity.ok().eTag("\"" + user.getEtag() + "\"").body(filterRepoUser(user));
   }
 
   @Override
@@ -143,11 +137,9 @@ public class UserController implements IGenericResourceController<RepoUser>{
 
     Page<RepoUser> page = userService.findAll(example, request);
 
-    filterAndAutoReturnRepoUsers(page.getContent());
-
     eventPublisher.publishEvent(new PaginatedResultsRetrievedEvent<>(RepoUser.class, uriBuilder, response, page.getNumber(), page.getTotalPages(), request.getPageSize()));
 
-    return ResponseEntity.ok().build();
+    return ResponseEntity.ok().body(filterRepoUsers(page.getContent()));
   }
 
   @Override
@@ -189,16 +181,17 @@ public class UserController implements IGenericResourceController<RepoUser>{
     return ResponseEntity.noContent().build();
   }
 
-  private void filterAndAutoReturnRepoUser(RepoUser resource){
-    //transform and return JSON representation as next controller result
-    json.use(JsonView.with(resource)
-            .onClass(RepoUser.class, match().exclude("password")));
+  private RepoUser filterRepoUser(RepoUser resource){
+    resource.setPassword(null);
+    return resource;
+
   }
 
-  private void filterAndAutoReturnRepoUsers(List<RepoUser> resources){
-    //transform and return JSON representation as next controller result
-    json.use(JsonView.with(resources)
-            .onClass(RepoUser.class, match().exclude("password")));
+  private List<RepoUser> filterRepoUsers(List<RepoUser> resources){
+    resources.forEach((user) -> {
+      user.setPassword(null);
+    });
+    return resources;
   }
 
   @Override

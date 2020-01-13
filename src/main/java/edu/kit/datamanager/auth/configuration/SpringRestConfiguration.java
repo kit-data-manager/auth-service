@@ -13,21 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.auth;
+package edu.kit.datamanager.auth.configuration;
 
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
+import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
+import org.springframework.data.rest.core.mapping.RepositoryDetectionStrategy;
+import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
+import org.springframework.stereotype.Component;
 
 /**
  *
  * @author jejkal
  */
-@Configuration
-@EnableTransactionManagement
-@EnableJpaRepositories(basePackages = "edu.kit.datamanager.auth")
-@EntityScan(basePackages = {"edu.kit.datamanager.auth.domain", "edu.kit.datamanager.entities"})
-public class JPAPersistenceConfig{
+@Component
+public class SpringRestConfiguration extends RepositoryRestConfigurerAdapter{
+
+  @Override
+  public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config){
+    config.setRepositoryDetectionStrategy(RepositoryDetectionStrategy.RepositoryDetectionStrategies.ALL);
+  }
 
 }

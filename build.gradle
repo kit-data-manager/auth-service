@@ -5,14 +5,14 @@ buildscript {
       mavenCentral()
    }
    dependencies {
-      classpath("org.springframework.boot:spring-boot-gradle-plugin:2.1.4.RELEASE")
+      classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
       //classpath 'org.kordamp.gradle:stats-gradle-plugin:0.2.2'
    }
 }
 
 plugins { 
    id 'io.franzbecker.gradle-lombok' version '1.14'
-   id "io.spring.dependency-management" version "1.0.7.RELEASE" 
+   id "io.spring.dependency-management" version "1.0.8.RELEASE" 
    id "com.github.kt3k.coveralls" version "2.8.1" 
    id "org.owasp.dependencycheck" version "3.1.2"
    id "org.asciidoctor.convert" version "1.5.3"
@@ -32,6 +32,7 @@ repositories {
    mavenLocal() 
    jcenter()
    mavenCentral()
+   maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
 }
 
 sourceCompatibility = 1.8
@@ -52,22 +53,22 @@ if (project.hasProperty('travis')) {
 }
 
 dependencies {
-   compile("org.springframework.boot:spring-boot-starter-data-rest")
-   compile("org.springframework:spring-context-support")
-   compile("org.springframework.boot:spring-boot-starter-amqp")
+   implementation("org.springframework.boot:spring-boot-starter-data-rest")
+   implementation("org.springframework:spring-context-support")
+   implementation("org.springframework.boot:spring-boot-starter-amqp")
 
-   compile("io.springfox:springfox-swagger-ui:2.9.0")
+   implementation("io.springfox:springfox-swagger-ui:3.0.0-SNAPSHOT")
 
-   compile("edu.kit.datamanager:service-base:0.1")
+   implementation("edu.kit.datamanager:service-base:0.1")
 
-   compile("com.monitorjbl:spring-json-view:0.16")
-   compile("org.postgresql:postgresql:42.2.1")
+   implementation("com.monitorjbl:spring-json-view:0.16")
+   implementation("org.postgresql:postgresql:42.2.1")
 
-   testCompile("com.h2database:h2:1.4.194")
-   testCompile("org.springframework.restdocs:spring-restdocs-mockmvc")
-   testCompile("org.springframework.boot:spring-boot-starter-test")   
-   testCompile("org.springframework:spring-test")
-   testCompile 'org.springframework.security:spring-security-test'
+   testImplementation("com.h2database:h2:1.4.194")
+   testImplementation("org.springframework.restdocs:spring-restdocs-mockmvc")
+   testImplementation("org.springframework.boot:spring-boot-starter-test")   
+   testImplementation("org.springframework:spring-test")
+   testImplementation 'org.springframework.security:spring-security-test'
 
    asciidoctor('org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE')
 }
@@ -91,6 +92,6 @@ test {
 }
 
 lombok {
-   version = '1.18.4'
+   version = '1.18.10'
    sha256 = ""
 }

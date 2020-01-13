@@ -17,20 +17,10 @@ package edu.kit.datamanager.auth;
 
 import com.monitorjbl.json.JsonViewSupportFactoryBean;
 import edu.kit.datamanager.auth.configuration.ApplicationProperties;
-import edu.kit.datamanager.auth.service.IGroupService;
-import edu.kit.datamanager.auth.service.IUserService;
-import edu.kit.datamanager.auth.service.impl.RepoUserService;
-import edu.kit.datamanager.auth.service.impl.RepoUserGroupService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.TopicExchange;
-import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
-import org.springframework.amqp.rabbit.connection.ConnectionFactory;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -52,8 +42,8 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 @ComponentScan(basePackages = {"edu.kit.datamanager", "edu.kit.datamanager.messaging.client"})
 public class Application{
 
-  @Autowired
-  private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
+//  @Autowired
+//  private RequestMappingHandlerAdapter requestMappingHandlerAdapter;
 //  @Autowired
 //  private Javers javers;
 
@@ -90,16 +80,16 @@ public class Application{
 //    return new RepoUserGroupService();//javers);
 //  }
 
-  @Bean
-  @Primary
-  public RequestMappingHandlerAdapter adapter(){
-    return requestMappingHandlerAdapter;
-  }
-
-  @Bean
-  public JsonViewSupportFactoryBean views(){
-    return new JsonViewSupportFactoryBean();
-  }
+//  @Bean
+//  @Primary
+//  public RequestMappingHandlerAdapter adapter(){
+//    return requestMappingHandlerAdapter;
+//  }
+//
+//  @Bean
+//  public JsonViewSupportFactoryBean views(){
+//    return new JsonViewSupportFactoryBean();
+//  }
 
   public static void main(String[] args){
     ApplicationContext ctx = SpringApplication.run(Application.class, args);
