@@ -15,109 +15,79 @@
  */
 package edu.kit.datamanager.auth.swagger;
 
-import com.google.common.collect.Lists;
-import static com.google.common.collect.Lists.newArrayList;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import javax.servlet.http.HttpServletResponse;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.domain.Pageable;
-import org.springframework.web.context.request.WebRequest;
-import org.springframework.web.util.UriComponentsBuilder;
-import springfox.documentation.builders.AuthorizationScopeBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.ApiKey;
-import springfox.documentation.service.AuthorizationScope;
-import springfox.documentation.service.BasicAuth;
-import springfox.documentation.service.Contact;
-import springfox.documentation.service.SecurityReference;
-import springfox.documentation.service.SecurityScheme;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spi.service.contexts.SecurityContext;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger.web.ApiKeyVehicle;
-import springfox.documentation.swagger.web.SecurityConfiguration;
-import springfox.documentation.swagger2.annotations.EnableSwagger2WebMvc;
-
 /**
  *
  * @author jejkal
  */
-@Configuration
-@EnableSwagger2WebMvc
 public class SwaggerConfig{
 
-  @Bean
-  public Docket api(){
-    AuthorizationScope[] authScopes = new AuthorizationScope[1];
-    authScopes[0] = new AuthorizationScopeBuilder()
-            .scope("")
-            .build();
-
-    SecurityReference securityReference = SecurityReference.builder()
-            .reference("basicAuth")
-            .scopes(authScopes)
-            .build();
-
-    ArrayList<SecurityScheme> auth = new ArrayList<>(1);
-    auth.add(new BasicAuth("basicAuth"));
-
-    ArrayList<SecurityContext> securityContexts = newArrayList(SecurityContext.builder().securityReferences(newArrayList(securityReference)).build());
-
-    return new Docket(DocumentationType.SWAGGER_2)
-            .select()
-            .apis(RequestHandlerSelectors.basePackage("edu.kit.datamanager.auth.web"))
-            .paths(PathSelectors.any())
-            .build().apiInfo(apiInfo())
-            .ignoredParameterTypes(Pageable.class, WebRequest.class, HttpServletResponse.class, UriComponentsBuilder.class)
-            .securityContexts(Lists.newArrayList(securityContext()))
-            .securitySchemes(Lists.newArrayList(apiKey(), new BasicAuth("test")));
-  }
-
-  private ApiKey apiKey(){
-    return new ApiKey("AUTHORIZATION", "api_key", "header");
-  }
-
-  private ApiInfo apiInfo(){
-    return new ApiInfo(
-            "Authentication Microservice - RESTful API",
-            "This webpage describes the RESTful interface of the KIT Data Manager Authentication Microservice.",
-            "0.1",
-            null,
-            new Contact("KIT Data Manager Support", "datamanager.kit.edu", "support@datamanager.kit.edu"),
-            "Apache 2.0", "http://www.apache.org/licenses/LICENSE-2.0.html", Collections.emptyList());
-  }
-
-  @Bean
-  SecurityConfiguration security(){
-    return new SecurityConfiguration(
-            null,
-            null,
-            null, // realm Needed for authenticate button to work
-            null, // appName Needed for authenticate button to work
-            "BEARER ",// apiKeyValue
-            ApiKeyVehicle.HEADER,
-            "AUTHORIZATION", //apiKeyName
-            null);
-  }
-
-  private SecurityContext securityContext(){
-    return SecurityContext.builder()
-            .securityReferences(defaultAuth())
-            .forPaths(PathSelectors.regex("/anyPath.*"))
-            .build();
-  }
-
-  List<SecurityReference> defaultAuth(){
-    AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
-    AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
-    authorizationScopes[0] = authorizationScope;
-    return Lists.newArrayList(new SecurityReference("AUTHORIZATION", authorizationScopes));
-  }
+//  @Bean
+//  public Docket api(){
+//    AuthorizationScope[] authScopes = new AuthorizationScope[1];
+//    authScopes[0] = new AuthorizationScopeBuilder()
+//            .scope("")
+//            .build();
+//
+//    SecurityReference securityReference = SecurityReference.builder()
+//            .reference("basicAuth")
+//            .scopes(authScopes)
+//            .build();
+//
+//    ArrayList<SecurityScheme> auth = new ArrayList<>(1);
+//    auth.add(new BasicAuth("basicAuth"));
+//
+//    ArrayList<SecurityContext> securityContexts = newArrayList(SecurityContext.builder().securityReferences(newArrayList(securityReference)).build());
+//
+//    return new Docket(DocumentationType.SWAGGER_2)
+//            .select()
+//            .apis(RequestHandlerSelectors.basePackage("edu.kit.datamanager.auth.web"))
+//            .paths(PathSelectors.any())
+//            .build().apiInfo(apiInfo())
+//            .ignoredParameterTypes(Pageable.class, WebRequest.class, HttpServletResponse.class, UriComponentsBuilder.class)
+//            .securityContexts(Lists.newArrayList(securityContext()))
+//            .securitySchemes(Lists.newArrayList(apiKey(), new BasicAuth("test")));
+//  }
+//
+//  private ApiKey apiKey(){
+//    return new ApiKey("AUTHORIZATION", "api_key", "header");
+//  }
+//
+//  private ApiInfo apiInfo(){
+//    return new ApiInfo(
+//            "Authentication Microservice - RESTful API",
+//            "This webpage describes the RESTful interface of the KIT Data Manager Authentication Microservice.",
+//            "0.1",
+//            null,
+//            new Contact("KIT Data Manager Support", "datamanager.kit.edu", "support@datamanager.kit.edu"),
+//            "Apache 2.0", "http://www.apache.org/licenses/LICENSE-2.0.html", Collections.emptyList());
+//  }
+//
+//  @Bean
+//  SecurityConfiguration security(){
+//    return new SecurityConfiguration(
+//            null,
+//            null,
+//            null, // realm Needed for authenticate button to work
+//            null, // appName Needed for authenticate button to work
+//            "BEARER ",// apiKeyValue
+//            ApiKeyVehicle.HEADER,
+//            "AUTHORIZATION", //apiKeyName
+//            null);
+//  }
+//
+//  private SecurityContext securityContext(){
+//    return SecurityContext.builder()
+//            .securityReferences(defaultAuth())
+//            .forPaths(PathSelectors.regex("/anyPath.*"))
+//            .build();
+//  }
+//
+//  List<SecurityReference> defaultAuth(){
+//    AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
+//    AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
+//    authorizationScopes[0] = authorizationScope;
+//    return Lists.newArrayList(new SecurityReference("AUTHORIZATION", authorizationScopes));
+//  }
 //  @Bean
 //  SecurityContext securityContext(){
 //    AuthorizationScope readScope = new AuthorizationScope("read:pets", "read your pets");

@@ -18,10 +18,9 @@ package edu.kit.datamanager.auth.web;
 import edu.kit.datamanager.exceptions.UnauthorizedAccessException;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import edu.kit.datamanager.util.AuthenticationHelper;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,28 +31,19 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * @author jejkal
  */
-@Api(value = "Login Controller")
-@ApiResponses(
-        value = {
-          @ApiResponse(code = 401, message = "Unauthorized")
-          ,
-        @ApiResponse(code = 403, message = "Forbidden")
-          ,
-        @ApiResponse(code = 500, message = "Internal server error")
-        })
+@Schema(description = "Login Controller")
 @RestController
 public class LoginController{
 
   @Autowired
   private Logger LOGGER;
 
-  @ApiOperation(value = "Perform user login.",
-          notes = "The caller authenticates via HTTP Basic and will receive a JSON Web Token in the response body. "
+  @Operation(summary = "Perform user login.",
+          description = "The caller authenticates via HTTP Basic and will receive a JSON Web Token in the response body. "
           + "This token must then be provided in subsequent calls to other services within the Authentication header as Bearer token.")
-  @ApiResponses(value = {
-    @ApiResponse(code = 200, message = "Login successful")})
   @PostMapping("/api/v1/login")
-  public String login(@RequestParam(name = "groupId", required = false) String groupId){
+  public String login(
+          @Parameter(description = "The group id the returned token will associated with. The caller has to be member of the particular group.") @RequestParam(name = "groupId", required = false) String groupId){
     if(!(AuthenticationHelper.getAuthentication() instanceof JwtAuthenticationToken)){
       throw new UnauthorizedAccessException("Access denied");
     }

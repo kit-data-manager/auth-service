@@ -31,8 +31,8 @@ import edu.kit.datamanager.exceptions.FeatureNotImplementedException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
@@ -60,7 +60,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/users")
-@Api(value = "User Management")
+@Schema(description = "User Management")
 public class UserController implements IGenericResourceController<RepoUser>{
 
   private final JsonResult json = JsonResult.instance();
@@ -86,12 +86,14 @@ public class UserController implements IGenericResourceController<RepoUser>{
     return ResponseEntity.created(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).create(newUser, request, response)).toUri()).eTag("\"" + user.getEtag() + "\"").body(filterRepoUser(newUser));
   }
 
-  @ApiOperation(value = "Obtain caller information for the currently authenticated user.",
-          notes = "This endpoints can be used to obtain user details for the currently logged in user. If the caller has authenticated as registered user, user details are returned. "
+  @Operation(summary = "Obtain caller information for the currently authenticated user.",
+          description = "This endpoints can be used to obtain user details for the currently logged in user. If the caller has authenticated as registered user, user details are returned. "
           + "If this endpoint is accessed anonymously, HTTP UNAUTHORIZED (401) is returned.")
   @RequestMapping(value = {"/me"}, method = {RequestMethod.GET})
   @ResponseBody
-  public ResponseEntity<RepoUser> me(WebRequest wr, HttpServletResponse hsr){
+  public ResponseEntity<RepoUser> me(
+          final WebRequest wr,
+          final HttpServletResponse hsr){
     ControllerUtils.checkAnonymousAccess();
 
     String principal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
@@ -106,7 +108,11 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<RepoUser> getById(@PathVariable(value = "id") String id, @RequestParam(value = "version", required = false) Long l, WebRequest request, HttpServletResponse response){
+  public ResponseEntity<RepoUser> getById(
+          @PathVariable(value = "id") String id,
+          @RequestParam(value = "version", required = false) Long version,
+          final WebRequest request,
+          final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
     RepoUser user = userService.findById(id);
@@ -120,12 +126,25 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity<List<RepoUser>> findAll(@RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUser>> findAll(
+          @RequestParam(name = "from", required = false) Instant lastUpdateFrom,
+          @RequestParam(name = "until", required = false) Instant lastUpdateUntil,
+          final Pageable pgbl,
+          final WebRequest wr,
+          final HttpServletResponse response,
+          final UriComponentsBuilder uriBuilder){
     return findByExample(null, lastUpdateFrom, lastUpdateUntil, pgbl, wr, response, uriBuilder);
   }
 
   @Override
-  public ResponseEntity<List<RepoUser>> findByExample(@RequestBody RepoUser example, @RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, final Pageable pgbl, final WebRequest wr, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUser>> findByExample(
+          @RequestBody RepoUser example,
+          @RequestParam(name = "from", required = false) Instant lastUpdateFrom,
+          @RequestParam(name = "until", required = false) Instant lastUpdateUntil,
+          final Pageable pgbl,
+          final WebRequest wr,
+          final HttpServletResponse response,
+          final UriComponentsBuilder uriBuilder){
     ControllerUtils.checkAnonymousAccess();
 
     if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
@@ -143,7 +162,11 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity patch(@PathVariable(value = "id") String id, @RequestBody JsonPatch patch, WebRequest request, HttpServletResponse hsr){
+  public ResponseEntity patch(
+          @PathVariable(value = "id") String id,
+          @RequestBody JsonPatch patch,
+          final WebRequest request,
+          final HttpServletResponse hsr){
     ControllerUtils.checkAnonymousAccess();
 
     RepoUser user = userService.findById(id);
@@ -160,7 +183,10 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity delete(@PathVariable(value = "id") String id, WebRequest request, HttpServletResponse hsr){
+  public ResponseEntity delete(
+          @PathVariable(value = "id") String id,
+          final WebRequest request,
+          final HttpServletResponse hsr){
     ControllerUtils.checkAnonymousAccess();
 
     if(!AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.getValue())){
@@ -195,7 +221,11 @@ public class UserController implements IGenericResourceController<RepoUser>{
   }
 
   @Override
-  public ResponseEntity put(String string, RepoUser c, WebRequest wr, HttpServletResponse hsr){
+  public ResponseEntity put(
+          String string,
+          RepoUser c,
+          WebRequest wr,
+          HttpServletResponse hsr){
     throw new FeatureNotImplementedException("PUT is not supported for user resouces.");
   }
 

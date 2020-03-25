@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import edu.kit.datamanager.annotations.Searchable;
 import edu.kit.datamanager.annotations.SecureUpdate;
 import edu.kit.datamanager.entities.EtagSupport;
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
@@ -48,7 +48,7 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author jejkal
  */
 @Entity
-@ApiModel(description = "An agent of type 'user' related to a resource, e.g. the creator or a contributor.")
+@Schema(description = "An agent of type 'user' related to a resource, e.g. the creator or a contributor.")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @EqualsAndHashCode(callSuper = false)

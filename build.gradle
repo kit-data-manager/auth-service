@@ -57,8 +57,6 @@ dependencies {
    implementation("org.springframework:spring-context-support")
    implementation("org.springframework.boot:spring-boot-starter-amqp")
 
-   implementation("io.springfox:springfox-swagger-ui:3.0.0-SNAPSHOT")
-
    implementation("edu.kit.datamanager:service-base:0.1")
 
    implementation("com.monitorjbl:spring-json-view:0.16")

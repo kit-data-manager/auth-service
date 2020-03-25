@@ -17,10 +17,6 @@ package edu.kit.datamanager.auth.web;
 
 import com.github.fge.jsonpatch.JsonPatch;
 import com.monitorjbl.json.JsonResult;
-import com.monitorjbl.json.JsonView;
-import static com.monitorjbl.json.Match.match;
-import edu.kit.datamanager.auth.domain.GroupMembership;
-import edu.kit.datamanager.auth.domain.RepoUser;
 import edu.kit.datamanager.auth.domain.RepoUserGroup;
 import edu.kit.datamanager.auth.domain.RepoUserGroup.GroupRole;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
@@ -28,7 +24,6 @@ import edu.kit.datamanager.exceptions.UpdateForbiddenException;
 import edu.kit.datamanager.auth.service.IGroupService;
 import edu.kit.datamanager.auth.service.IUserService;
 import edu.kit.datamanager.controller.hateoas.event.PaginatedResultsRetrievedEvent;
-import io.swagger.annotations.Api;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -43,11 +38,14 @@ import edu.kit.datamanager.exceptions.FeatureNotImplementedException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.slf4j.Logger;
+import org.springdoc.core.converters.PageableAsQueryParam;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -64,7 +62,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/groups")
-@Api(value = "Group Management")
+@Schema(description = "Group Management")
 public class GroupController implements IGenericResourceController<RepoUserGroup>{
 
   private JsonResult json = JsonResult.instance();
@@ -86,7 +84,10 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   }
 
   @Override
-  public ResponseEntity<RepoUserGroup> create(@RequestBody RepoUserGroup group, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity<RepoUserGroup> create(
+          @RequestBody RepoUserGroup group,
+          final WebRequest request,
+          final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
     RepoUserGroup newGroup = userGroupService.create(group, (String) AuthenticationHelper.getPrincipal());
@@ -95,7 +96,11 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   }
 
   @Override
-  public ResponseEntity<RepoUserGroup> getById(@PathVariable("id") final String id, @RequestParam(value = "version", required = false) Long l, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity<RepoUserGroup> getById(
+          @PathVariable("id") final String id,
+          @RequestParam(value = "version", required = false) Long version,
+          final WebRequest request,
+          final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
     RepoUserGroup group = userGroupService.findById(id);
@@ -117,12 +122,25 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   }
 
   @Override
-  public ResponseEntity<List<RepoUserGroup>> findAll(@RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, Pageable pgbl, WebRequest request, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUserGroup>> findAll(
+          @RequestParam(name = "from", required = false) Instant lastUpdateFrom,
+          @RequestParam(name = "until", required = false) Instant lastUpdateUntil,
+          final Pageable pgbl,
+          final WebRequest request,
+          final HttpServletResponse response,
+          final UriComponentsBuilder uriBuilder){
     return findByExample(null, lastUpdateFrom, lastUpdateUntil, pgbl, request, response, uriBuilder);
   }
 
   @Override
-  public ResponseEntity<List<RepoUserGroup>> findByExample(@RequestBody RepoUserGroup example, @RequestParam(name = "from", required = false) Instant lastUpdateFrom, @RequestParam(name = "until", required = false) Instant lastUpdateUntil, Pageable pgbl, WebRequest req, final HttpServletResponse response, final UriComponentsBuilder uriBuilder){
+  public ResponseEntity<List<RepoUserGroup>> findByExample(
+          @RequestBody RepoUserGroup example,
+          @RequestParam(name = "from", required = false) Instant lastUpdateFrom,
+          @RequestParam(name = "until", required = false) Instant lastUpdateUntil,
+          final Pageable pgbl,
+          final WebRequest req,
+          final HttpServletResponse response,
+          final UriComponentsBuilder uriBuilder){
     ControllerUtils.checkAnonymousAccess();
 
     PageRequest request = ControllerUtils.checkPaginationInformation(pgbl);
@@ -136,7 +154,11 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   }
 
   @Override
-  public ResponseEntity patch(@PathVariable("id") final String id, @RequestBody JsonPatch patch, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity patch(
+          @PathVariable("id") final String id,
+          @RequestBody JsonPatch patch,
+          final WebRequest request,
+          final HttpServletResponse response){
     ControllerUtils.checkAnonymousAccess();
 
     RepoUserGroup group = userGroupService.findById(id);
@@ -174,7 +196,11 @@ public class GroupController implements IGenericResourceController<RepoUserGroup
   }
 
   @Override
-  public ResponseEntity delete(@PathVariable("id") final String id, WebRequest request, final HttpServletResponse response){
+  public ResponseEntity delete(
+          @PathVariable("id") final String id,
+          final WebRequest request,
+          final HttpServletResponse response
+  ){
     ControllerUtils.checkAnonymousAccess();
 
     try{

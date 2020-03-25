@@ -27,8 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,7 +60,7 @@ import org.slf4j.LoggerFactory;
  * @author jejkal
  */
 @Entity
-@ApiModel(description = "An agent of type 'user' related to a resource, e.g. the creator or a contributor.")
+@Schema(description = "An agent of type 'user' related to a resource, e.g. the creator or a contributor.")
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 @EqualsAndHashCode(callSuper = false)
@@ -95,17 +94,17 @@ public class RepoUser implements UserDetails, EtagSupport{
   private String orcid;
   //special/internal properties that cannot be changed by the user
   @SecureUpdate({"ROLE_ADMINISTRATOR"})
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   private Integer loginFailures = 0;
   @Temporal(TemporalType.TIMESTAMP)
   @SecureUpdate({"ROLE_ADMINISTRATOR"})
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   private Date lockedUntil = null;
   @SecureUpdate({"ROLE_ADMINISTRATOR"})
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   private Boolean active;
   @SecureUpdate({"ROLE_ADMINISTRATOR"})
-  @ApiModelProperty(hidden = true)
+  @Schema(hidden = true)
   private Boolean locked;
   @Transient
   private transient Collection<RepoUserRole> rolesAsEnum = new LinkedList<>();
