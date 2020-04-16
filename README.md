@@ -1,5 +1,9 @@
 # KIT Data Manager - Authentication Service
 
+![Build Status](https://img.shields.io/travis/kit-data-manager/auth-service.svg)
+![Code Coverage](https://img.shields.io/coveralls/github/kit-data-manager/auth-service.svg)
+![License](https://img.shields.io/github/license/kit-data-manager/auth-service.svg)
+
 This project contains authentication microservice for the KIT DM infrastructure. The service provides
 user and group management as well as a login endpoint creating JSON Web Token credentials, which can
 be handed over to other services for authorization decisions.
