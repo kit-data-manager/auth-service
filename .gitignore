@@ -3,3 +3,5 @@
 /.nb-gradle/
 /.nb-gradle-properties
 /.settings/
+/config/
+**/application.properties
