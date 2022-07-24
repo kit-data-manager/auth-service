@@ -1,3 +1,5 @@
+## This servicehas been deprecated and won't be maintained anymore. For authentication, Keycloak will be used in future. 
+
 # KIT Data Manager - Authentication Service
 
 ![Build Status](https://img.shields.io/travis/kit-data-manager/auth-service.svg)
